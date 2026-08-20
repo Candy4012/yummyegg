@@ -1,0 +1,3026 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>女朋友全家變咗隻蛋 — 文字冒險遊戲</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Zen+Kurenaido&family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+/* === RESET & BASE === */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--fg:#e8e0d4;--accent:#c4362a;
+  --accent2:#ff6b5a;--gold:#d4a853;--pink:#f5b0c8;
+  --rabbit-white:#f0ebe3;--shadow:rgba(196,54,42,.15);
+  --font-title:'Noto Serif TC',serif;--font-body:'Zen Kurenaido',sans-serif;
+  --font-pixel:'DotGothic16',monospace;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);
+  min-height:100vh;overflow-x:hidden;line-height:1.8}
+
+/* === NOISE OVERLAY === */
+body::before{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:.4}
+
+/* === SCROLLBAR === */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:2px}
+
+/* === LAYOUT === */
+#game-container{max-width:720px;margin:0 auto;padding:2rem 1.5rem;position:relative;min-height:100vh}
+
+/* === TITLE SCREEN === */
+#title-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;text-align:center;animation:fadeIn 2s ease}
+#title-screen h1{font-family:var(--font-title);font-size:2.4rem;font-weight:900;
+  color:var(--fg);letter-spacing:.15em;margin-bottom:.5rem;
+  text-shadow:0 0 40px var(--shadow),0 0 80px rgba(196,54,42,.08)}
+#title-screen .subtitle{font-size:.9rem;color:var(--accent);letter-spacing:.3em;
+  margin-bottom:3rem;font-family:var(--font-pixel)}
+#title-screen .egg-icon{font-size:4rem;margin-bottom:2rem;
+  animation:float 3s ease-in-out infinite;filter:drop-shadow(0 0 20px var(--shadow))}
+#title-screen .start-btn{background:none;border:1px solid var(--accent);color:var(--accent);
+  padding:.8rem 3rem;font-family:var(--font-body);font-size:1rem;cursor:pointer;
+  letter-spacing:.2em;transition:all .4s ease;position:relative;overflow:hidden}
+#title-screen .start-btn:hover{background:var(--accent);color:var(--bg);
+  box-shadow:0 0 30px var(--shadow)}
+#title-screen .start-btn::after{content:'';position:absolute;top:50%;left:50%;
+  width:0;height:0;background:rgba(255,255,255,.1);border-radius:50%;
+  transform:translate(-50%,-50%);transition:width .6s,height .6s}
+#title-screen .start-btn:hover::after{width:300px;height:300px}
+.title-rabbit{position:absolute;opacity:.06;font-size:8rem;
+  animation:drift 20s linear infinite}
+.title-rabbit:nth-child(1){top:10%;left:5%;animation-delay:0s}
+.title-rabbit:nth-child(2){top:60%;right:5%;animation-delay:-7s;font-size:6rem}
+.title-rabbit:nth-child(3){bottom:15%;left:15%;animation-delay:-13s;font-size:10rem}
+
+/* === GAME SCREEN === */
+#game-screen{display:none;padding-top:2rem;padding-bottom:4rem}
+
+/* Status bar */
+#status-bar{position:fixed;top:0;left:0;right:0;z-index:100;
+  background:linear-gradient(180deg,var(--bg) 60%,transparent);
+  padding:.8rem 1.5rem;display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--font-pixel);font-size:.7rem;color:var(--gold)}
+#status-bar .chapter-name{color:var(--accent);letter-spacing:.15em}
+#status-bar .inventory-count{cursor:pointer;transition:color .3s}
+#status-bar .inventory-count:hover{color:var(--accent2)}
+
+/* Story text area */
+#story-area{margin-top:3rem}
+.scene-image{width:100%;height:200px;border-radius:4px;margin-bottom:1.5rem;
+  background:var(--bg2);border:1px solid rgba(196,54,42,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:3rem;overflow:hidden;position:relative}
+.scene-image::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 60%,var(--bg))}
+
+#story-text{font-size:1.05rem;line-height:2;margin-bottom:2rem;
+  white-space:pre-wrap;animation:textReveal .8s ease}
+#story-text .highlight{color:var(--accent2);font-weight:bold}
+#story-text .whisper{color:rgba(232,224,212,.4);font-style:italic}
+#story-text .system{color:var(--gold);font-family:var(--font-pixel);font-size:.85rem}
+
+/* Choices */
+#choices{display:flex;flex-direction:column;gap:.6rem;margin-top:1.5rem}
+.choice-btn{background:var(--bg2);border:1px solid rgba(196,54,42,.2);
+  color:var(--fg);padding:.9rem 1.2rem;font-family:var(--font-body);font-size:.95rem;
+  cursor:pointer;text-align:left;transition:all .3s ease;position:relative;
+  border-radius:2px;line-height:1.6}
+.choice-btn:hover{border-color:var(--accent);background:rgba(196,54,42,.08);
+  padding-left:1.6rem}
+.choice-btn::before{content:'▸';position:absolute;left:.5rem;opacity:0;
+  color:var(--accent);transition:opacity .3s}
+.choice-btn:hover::before{opacity:1}
+.choice-btn.puzzle-choice{border-color:var(--gold);border-style:dashed}
+.choice-btn.puzzle-choice:hover{border-color:var(--gold);background:rgba(212,168,83,.08)}
+
+/* Puzzle input */
+#puzzle-area{margin-top:1rem;display:none}
+#puzzle-input{background:var(--bg2);border:1px solid var(--gold);color:var(--gold);
+  padding:.6rem 1rem;font-family:var(--font-pixel);font-size:1rem;width:100%;
+  outline:none;border-radius:2px}
+#puzzle-input:focus{box-shadow:0 0 15px rgba(212,168,83,.15)}
+#puzzle-submit{background:var(--gold);color:var(--bg);border:none;padding:.5rem 1.5rem;
+  font-family:var(--font-body);cursor:pointer;margin-top:.5rem;font-size:.9rem;
+  border-radius:2px;transition:opacity .3s}
+#puzzle-submit:hover{opacity:.8}
+#puzzle-hint{color:rgba(232,224,212,.4);font-size:.8rem;margin-top:.5rem;font-style:italic}
+
+/* Inventory panel */
+#inventory-panel{position:fixed;top:0;right:-320px;width:300px;height:100vh;
+  background:var(--bg2);border-left:1px solid rgba(196,54,42,.15);z-index:200;
+  padding:2rem 1.5rem;transition:right .4s ease;overflow-y:auto}
+#inventory-panel.open{right:0}
+#inventory-panel h3{font-family:var(--font-title);color:var(--gold);margin-bottom:1rem;
+  font-size:1.1rem;letter-spacing:.1em}
+#inventory-panel .inv-item{padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:.9rem;color:var(--fg);position:relative}
+#inventory-panel .inv-item .item-icon{margin-right:.5rem}
+#inventory-panel .inv-item:hover{background:rgba(196,54,42,.05)}
+#inventory-panel .inv-item::after{content:attr(data-desc);display:none;position:absolute;
+  left:0;top:100%;background:var(--bg);border:1px solid var(--accent);padding:.5rem;
+  font-size:.75rem;color:var(--fg);width:250px;z-index:10;line-height:1.5;
+  border-radius:2px;white-space:normal}
+#inventory-panel .inv-item:hover::after{display:block}
+#inv-close{position:absolute;top:1rem;right:1rem;background:none;border:none;
+  color:var(--fg);font-size:1.2rem;cursor:pointer}
+#inv-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;
+  display:none;cursor:pointer}
+#inv-overlay.show{display:block}
+
+/* Ending screen */
+#ending-screen{display:none;text-align:center;padding-top:15vh}
+#ending-screen h2{font-family:var(--font-title);font-size:2rem;margin-bottom:1rem}
+#ending-screen .ending-type{font-family:var(--font-pixel);font-size:.8rem;
+  letter-spacing:.3em;margin-bottom:2rem}
+#ending-screen .ending-text{font-size:1rem;line-height:2;margin-bottom:3rem;
+  max-width:500px;margin-left:auto;margin-right:auto}
+#ending-screen .restart-btn{background:none;border:1px solid var(--accent);
+  color:var(--accent);padding:.7rem 2rem;font-family:var(--font-body);cursor:pointer;
+  font-size:.95rem;transition:all .3s}
+#ending-screen .restart-btn:hover{background:var(--accent);color:var(--bg)}
+
+/* === ANIMATIONS === */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes textReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@keyframes drift{0%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(5deg)}100%{transform:translateY(0) rotate(0deg)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes glitch{0%{transform:translate(0)}20%{transform:translate(-2px,2px)}40%{transform:translate(2px,-2px)}60%{transform:translate(-1px,-1px)}80%{transform:translate(1px,1px)}100%{transform:translate(0)}}
+.shake{animation:shake .3s ease}
+.glitch{animation:glitch .2s ease 3}
+.fade-in{animation:fadeIn .6s ease}
+
+/* === FLOATING PARTICLES === */
+#particles{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.particle{position:absolute;width:2px;height:2px;background:var(--accent);border-radius:50%;
+  opacity:0;animation:particleFloat linear infinite}
+@keyframes particleFloat{
+  0%{transform:translateY(100vh) translateX(0);opacity:0}
+  10%{opacity:.3}
+  90%{opacity:.3}
+  100%{transform:translateY(-10vh) translateX(30px);opacity:0}
+}
+
+/* === SCENE IMAGE ENHANCED === */
+.scene-image{
+  background:radial-gradient(ellipse at center,rgba(196,54,42,.08) 0%,var(--bg2) 70%);
+  border:1px solid rgba(196,54,42,.15);
+  text-shadow:0 0 30px var(--shadow);
+  transition:all .5s ease;
+  font-size:3.5rem}
+.scene-image::before{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);
+  pointer-events:none;z-index:1}
+
+/* === CHOICE HOVER GLOW === */
+.choice-btn:active{transform:scale(.98)}
+
+/* === ENDING SCREEN ENHANCEMENTS === */
+#ending-screen{animation:fadeIn 2s ease}
+#ending-screen .ending-type{
+  padding:.3rem 1rem;border:1px solid currentColor;display:inline-block;
+  border-radius:2px;letter-spacing:.4em}
+
+/* === SKIP INDICATOR === */
+#skip-hint{position:fixed;bottom:1rem;right:1rem;font-family:var(--font-pixel);
+  font-size:.65rem;color:rgba(232,224,212,.2);z-index:50;
+  animation:pulse 2s ease infinite}
+
+/* === RESPONSIVE === */
+@media(max-width:600px){
+  #game-container{padding:1.5rem 1rem}
+  #title-screen h1{font-size:1.8rem}
+  #story-text{font-size:.95rem}
+  .choice-btn{font-size:.9rem;padding:.7rem 1rem}
+  .scene-image{height:150px;font-size:2.5rem}
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+
+<!-- PARTICLES -->
+<div id="particles"></div>
+
+<!-- SKIP HINT -->
+<div id="skip-hint" style="display:none">點擊文字可跳過動畫</div>
+
+<!-- TITLE SCREEN -->
+<div id="title-screen">
+  <div class="title-rabbit">🐰</div>
+  <div class="title-rabbit">🐰</div>
+  <div class="title-rabbit">🐰</div>
+  <div class="egg-icon">🥚</div>
+  <h1>女朋友全家變咗隻蛋</h1>
+  <div class="subtitle">E G G &nbsp; I S &nbsp; A &nbsp; L I E</div>
+  <button class="start-btn" onclick="startGame()">開 始 遊 戲</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+  <div id="status-bar">
+    <span class="chapter-name" id="chapter-label">序章</span>
+    <span class="inventory-count" id="inv-toggle" onclick="toggleInventory()">🎒 道具 (<span id="inv-num">0</span>)</span>
+  </div>
+  <div id="story-area">
+    <div class="scene-image" id="scene-img"></div>
+    <div id="story-text"></div>
+    <div id="puzzle-area">
+      <input type="text" id="puzzle-input" placeholder="輸入答案...">
+      <button id="puzzle-submit" onclick="submitPuzzle()">確認</button>
+      <div id="puzzle-hint"></div>
+    </div>
+    <div id="choices"></div>
+  </div>
+</div>
+
+<!-- INVENTORY PANEL -->
+<div id="inv-overlay" onclick="toggleInventory()"></div>
+<div id="inventory-panel">
+  <button id="inv-close" onclick="toggleInventory()">✕</button>
+  <h3>🎒 道具欄</h3>
+  <div id="inv-list"></div>
+</div>
+
+<!-- ENDING SCREEN -->
+<div id="ending-screen">
+  <div id="ending-icon" style="font-size:4rem;margin-bottom:1rem"></div>
+  <h2 id="ending-title"></h2>
+  <div class="ending-type" id="ending-type"></div>
+  <div class="ending-text" id="ending-text"></div>
+  <button class="restart-btn" onclick="location.reload()">重新開始</button>
+</div>
+
+</div>
+
+<script>
+/* === PARTICLES === */
+function createParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = Math.random() * 10 + 's';
+    p.style.width = (1 + Math.random() * 2) + 'px';
+    p.style.height = p.style.width;
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+/* === GAME STATE === */
+const state = {
+  currentNode: null,
+  inventory: [],
+  flags: {},
+  chapter: '序章',
+  history: [],
+  puzzleActive: false,
+  currentPuzzle: null,
+  typing: false
+};
+
+/* === STORY DATA === */
+const story = {
+/* --- PROLOGUE --- */
+'prologue_1': {
+  chapter: '序章',
+  icon: '🌃',
+  text: `自從嗰件事之後，我對「蛋」患咗嚴重嘅抗拒症狀。
+
+但一切，要由嗰個復活節嘅夜晚講起。
+
+嗰晚我搭緊小巴去女朋友 Chloe 嘅屋企。我哋拍拖三年，唯獨呢個月無見過佢，因為佢同家人去咗智利旅行。
+
+奇怪嘅係，佢返嚟之後只用手機覆咗我幾句，就完全消失咗。
+
+最後上線時間，永遠停留喺三日前嘅凌晨四點鐘。
+
+我決定親自上去搵佢。`,
+  choices: [
+    { text: '繼續', next: 'prologue_2' }
+  ]
+},
+'prologue_2': {
+  chapter: '序章',
+  icon: '🚐',
+  text: `「翠林邨有落。」
+
+小巴一停，我默默行入去佢住嘅大廈。走廊有些小陰沉，夜晚啲風一吹入嚟，多少都會發寒。
+
+行到門口，我見到佢屋企道大門未閂好⋯⋯露出咗一條小門縫。
+
+「唔會呱⋯⋯」
+
+我吞一吞口水，慢慢推開門：
+
+「Chloe！？」`,
+  choices: [
+    { text: '行入去', next: 'ch1_enter' }
+  ]
+},
+
+/* --- CHAPTER 1: THE APARTMENT --- */
+'ch1_enter': {
+  chapter: '第一章 蛋',
+  icon: '🚪',
+  text: `行入去第一步，就感受到自己踩到水面。
+
+低頭一望，成個地下都係水跡。再細心聽，可以聽到廁所嗰邊開住水。
+
+Chloe 間屋係三房一廳，同細佬父母一齊住。但此刻成間屋浸水咁，好難相信佢哋喺屋入面。
+
+屋內亮住白色燈管，電視機亦開住。
+
+一個人都無。
+
+<span class="whisper">（要仔細搜索每一間房⋯⋯說唔定有重要線索。）</span>`,
+  choices: [
+    { text: '搜索客廳', next: 'ch1_living_room' },
+    { text: '先去廁所睇下', next: 'ch1_bathroom' },
+    { text: '先入 Chloe 細佬間房', next: 'ch1_brother' },
+    { text: '直接去 Chloe 間房', next: 'ch1_chloe_room' }
+  ]
+},
+'ch1_living_room': {
+  chapter: '第一章 蛋',
+  icon: '📺',
+  text: `客廳得部開住咗嘅電視。螢幕閃住雪花，似乎冇訊號。
+
+我行過去想閂電視，但留意到電視櫃下面有啲嘢⋯⋯
+
+一隻鞋。男裝，42碼。係外父嘅鞋。
+
+鞋入面塞住一張紙條。
+
+<span class="whisper">「如果出事，去床底。——源」</span>
+
+「源」？邊個叫「源」嘅人留低呢張紙？
+
+我再仔細望下電視櫃⋯⋯抽屜入面有一把备用門匙，同一個寫住「重生會——翠林分部」嘅徽章。
+
+<span class="system">【獲得道具：外父嘅鞋（內有紙條）】</span>
+<span class="system">【獲得道具：重生會徽章】</span>
+<span class="system">【獲得線索：「去床底」】</span>`,
+  onEnter: (s) => {
+    addItem(s, '外父嘅鞋', '👞');
+    addItem(s, '重生會徽章', '📛');
+    setFlag(s, 'found_shoe_clue');
+    setFlag(s, 'know_bed_hint');
+  },
+  choices: [
+    { text: '去廁所', next: 'ch1_bathroom' },
+    { text: '去細佬間房', next: 'ch1_brother' },
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' },
+    { text: '檢查父母房間嘅床底', next: 'ch1_under_bed' }
+  ]
+},
+'ch1_under_bed': {
+  chapter: '第一章 蛋',
+  icon: '🛏️',
+  text: `我衝入父母房間，趴落地望床底。
+
+塵好多⋯⋯但入面確實有嘢。
+
+一個鐵盒。上面有鎖，但鎖好細。
+
+我用力拉開——入面有一疊相片同一本手寫筆記。
+
+相片係外父同嗰個叫「源」嘅人嘅合照。佢哋著住重生會嘅袍，笑得好開心。
+
+手寫筆記嘅最後一頁：
+
+<span class="whisper">「譚國源話只要完成儀式，我嘅癌就可以好返。
+我知呢個係賭博。但為咗屋企人，我願意試。
+如果我變咗蛋⋯⋯拜託邊個都好，搵到隻蛋，唔好打破佢。
+——洪志偉」</span>
+
+<span class="highlight">外父⋯⋯一早知道自己會變蛋？</span>
+
+<span class="system">【獲得道具：鐵盒筆記】</span>
+<span class="system">【獲得線索：外父嘅自白】</span>`,
+  onEnter: (s) => {
+    addItem(s, '鐵盒筆記', '📓');
+    setFlag(s, 'found_iron_box');
+    setFlag(s, 'know_father_willing');
+  },
+  choices: [
+    { text: '去廁所', next: 'ch1_bathroom', condition: (s) => !s.flags.found_father_egg },
+    { text: '去細佬間房', next: 'ch1_brother', condition: (s) => !s.flags.broke_brother_egg },
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' }
+  ]
+},
+'ch1_bathroom': {
+  chapter: '第一章 蛋',
+  icon: '🛁',
+  text: `我行去廁所，發現花灑一直開住水。浴缸浸滿水，而水面浮住⋯⋯
+
+一隻蛋。
+
+蛋殼上繪畫住一個人類臉孔——戴黑眼鏡、鼻大大、留鬚。
+
+係 Chloe 爸爸嘅樣。
+
+我小心翼翼咁拎起隻蛋，蛋殼微微溫熱，好似有嘢喺入面脈緊咁。
+
+洗手盤上面仲有一條濕咗嘅毛巾，同一支開咗蓋嘅沐浴乳。似乎有人好匆忙咁離開。
+
+喺毛巾下面，我搵到一條頸鏈——十字架形狀，同重生會封信上面嘅 Logo 一模一樣。
+
+<span class="system">【獲得道具：外父嘅復活蛋】</span>
+<span class="system">【獲得道具：重生會頸鏈】</span>`,
+  onEnter: (s) => { addItem(s, '外父嘅復活蛋', '🥚'); addItem(s, '重生會頸鏈', '📿'); setFlag(s, 'found_father_egg'); },
+  choices: [
+    { text: '去 Chloe 細佬間房', next: 'ch1_brother' },
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' },
+    { text: '去客廳', next: 'ch1_living_room', condition: (s) => !s.flags.found_shoe_clue }
+  ]
+},
+'ch1_brother': {
+  chapter: '第一章 蛋',
+  icon: '🎮',
+  text: `我推開細佬間房。
+
+佢係個啱啱畢業嘅全職廢青，每日匿房打機、拍片，話要做實況主。
+
+房間空空如也。張床上面放住一隻蛋——蛋殼上畫住一個年輕男仔嘅樣，同細佬有七八成相似。
+
+我坐落張床想睇清楚⋯⋯
+
+「咔嚓。」
+
+⋯⋯我坐碎咗隻蛋。
+
+黏黏嘅紅色液體滲入床單。
+
+<span class="highlight">我⋯⋯坐爆咗 Chloe 細佬嘅復活蛋。</span>
+
+但在蛋汁入面，我搵到一條 USB 手指。似乎係細佬事先收埋嘅。
+
+<span class="system">【重要事件：細佬嘅靈魂消散了】</span>
+<span class="system">【獲得道具：神秘 USB】</span>`,
+  onEnter: (s) => { setFlag(s, 'broke_brother_egg'); addItem(s, '神秘 USB', '💾'); },
+  choices: [
+    { text: '⋯⋯繼續', next: 'ch1_after_brother' }
+  ]
+},
+'ch1_after_brother': {
+  chapter: '第一章 蛋',
+  icon: '😰',
+  text: `雙手不停咁震。紅色嘅蛋汁黏滿成隻手。
+
+我⋯⋯做咗乜？
+
+一股強烈嘅罪惡感湧上心頭。但宜家唔係自責嘅時候。
+
+<span class="whisper">（如果其他蛋都被打破⋯⋯）</span>
+
+我要搵到剩低嘅蛋。
+
+<span class="whisper">（仲有嗰條 USB⋯⋯細佬留低咗乜嘢？）</span>`,
+  choices: [
+    { text: '去廁所', next: 'ch1_bathroom', condition: (s) => !s.flags.found_father_egg },
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' },
+    { text: '去客廳', next: 'ch1_living_room', condition: (s) => !s.flags.found_shoe_clue },
+    { text: '去廚房搜索', next: 'ch1_kitchen' }
+  ]
+},
+'ch1_kitchen': {
+  chapter: '第一章 蛋',
+  icon: '🍳',
+  text: `廚房一片凌亂。雪櫃門大開，入面啲食物已經開始變壞。
+
+但喺雪櫃頂，我搵到一個紅色嘅急救箱。入面有繃帶、消毒酒精⋯⋯
+
+仲有一張摺疊嘅地圖。
+
+地圖上面畫住鎖羅盆嘅位置，仲有幾個標記住嘅紅點。其中一個紅點寫住「井」。
+
+<span class="whisper">（邊個會喺雪櫃頂收埋地圖？定係⋯⋯有人特登留低？）</span>
+
+喺廚櫃抽屜入面，我仲搵到一把生果刀。雖然唔係乜嘢厲害武器，但總好過赤手空拳。
+
+<span class="system">【獲得道具：急救箱】</span>
+<span class="system">【獲得道具：鎖羅盆地圖】</span>
+<span class="system">【獲得道具：生果刀】</span>`,
+  onEnter: (s) => {
+    addItem(s, '急救箱', '🩹');
+    addItem(s, '鎖羅盆地圖', '🗺️');
+    addItem(s, '生果刀', '🔪');
+    setFlag(s, 'found_kitchen_items');
+  },
+  choices: [
+    { text: '去廁所', next: 'ch1_bathroom', condition: (s) => !s.flags.found_father_egg },
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' },
+    { text: '去客廳', next: 'ch1_living_room', condition: (s) => !s.flags.found_shoe_clue }
+  ]
+},
+'ch1_bathroom_late': {
+  chapter: '第一章 蛋',
+  icon: '🛁',
+  text: `我衝入廁所。浴缸上面浮住一隻畫住 Chloe 爸爸樣嘅蛋。
+
+我小心咁拎起佢，雙手仲係因為剛才嘅事而震緊。
+
+<span class="system">【獲得道具：外父嘅復活蛋】</span>`,
+  onEnter: (s) => { addItem(s, '外父嘅復活蛋', '🥚'); setFlag(s, 'found_father_egg'); },
+  choices: [
+    { text: '去 Chloe 間房', next: 'ch1_chloe_room' }
+  ]
+},
+'ch1_chloe_room': {
+  chapter: '第一章 蛋',
+  icon: '💄',
+  text: `Chloe 間房異常地凍，冷氣似乎開咗好耐。
+
+張電腦櫈上面放住一隻蛋——蛋殼繪畫住人類臉孔，畫風偏向得意，但栩栩如生。
+
+蛋嘅樣子同 Chloe 一模一樣。笑起嚟牙齒整齊又潔白，就好似佢本人咁。
+
+我忍不住伸手掂咗一下蛋殼⋯⋯微微脈動，好似有心跳咁。
+
+佢⋯⋯真係變成咗隻蛋？
+
+喺床頭櫃上面，我發現咗 Chloe 嘅手機，仲有一封寫住「重生會」嘅信件。
+
+喺衣櫃上面，我仲搵到一個細小嘅音樂盒。打開佢，入面有一張小紙條：
+
+<span class="whisper">「如果你睇到呢張紙，代表我已經唔能夠自己解釋。
+去廁所浴缸。去細佬張床。去我張電腦櫈。
+你會明白一切。
+——Chloe」</span>
+
+<span class="system">【獲得道具：Chloe 嘅復活蛋】</span>
+<span class="system">【獲得道具：Chloe 嘅手機】</span>
+<span class="system">【獲得道具：重生會嘅信】</span>
+<span class="system">【獲得道具：音樂盒紙條】</span>`,
+  onEnter: (s) => {
+    addItem(s, 'Chloe 嘅復活蛋', '🥚');
+    addItem(s, 'Chloe 嘅手機', '📱');
+    addItem(s, '重生會嘅信', '✉️');
+    addItem(s, '音樂盒紙條', '🎵');
+    setFlag(s, 'found_chloe_egg');
+  },
+  choices: [
+    { text: '查看 Chloe 嘅手機', next: 'ch1_phone' },
+    { text: '讀重生會嘅信', next: 'ch1_letter' },
+    { text: '帶齊嘢離開呢間屋', next: 'ch1_leave' }
+  ]
+},
+'ch1_phone': {
+  chapter: '第一章 蛋',
+  icon: '📱',
+  text: `Chloe 嘅手機有密碼鎖。
+
+我試咗幾個日期都唔啱⋯⋯
+
+<span class="whisper">（密碼會係乜嘢呢？我哋嘅紀念日？定係⋯⋯）</span>
+
+<span class="system">【解謎：輸入 Chloe 手機密碼（4位數字）】</span>
+<span class="system">提示：留意重生會封信入面提到嘅日期⋯⋯</span>`,
+  puzzle: {
+    answer: '0320',
+    hint: '封信提到「春分前夕」——三月二十日。試試 0320。',
+    success: 'ch1_phone_ok',
+    fail: 'ch1_phone_fail'
+  },
+  choices: []
+},
+'ch1_phone_ok': {
+  chapter: '第一章 蛋',
+  icon: '📱',
+  text: `密碼正確。
+
+手機入面有幾段同泉叔嘅對話記錄，仲有一段影片。
+
+影片入面，Chloe 同家人食緊飯，但佢爸爸面色好差。佢媽媽提到「重生會嘅弟兄話可以治好爸爸嘅病」。
+
+最後一段訊息，係 Chloe 傳俾自己嘅備忘：
+
+<span class="highlight">「如果我有事，唔好嚟搵我。Egg is a lie.」</span>
+
+<span class="system">【獲得線索：Egg is a lie】</span>`,
+  onEnter: (s) => { setFlag(s, 'phone_unlocked'); addItem(s, 'Chloe 嘅備忘', '📝'); },
+  choices: [
+    { text: '讀重生會嘅信', next: 'ch1_letter', condition: (s) => !s.flags.read_letter },
+    { text: '帶齊嘢離開呢間屋', next: 'ch1_leave' }
+  ]
+},
+'ch1_phone_fail': {
+  chapter: '第一章 蛋',
+  icon: '📱',
+  text: `密碼錯誤。手機鎖定咗三十秒。
+
+<span class="whisper">（再諗諗⋯⋯密碼會係乜嘢呢？）</span>`,
+  choices: [
+    { text: '再試一次', next: 'ch1_phone' },
+    { text: '暫時唔理，去讀重生會嘅信', next: 'ch1_letter' },
+    { text: '暫時唔理，帶齊嘢離開', next: 'ch1_leave' }
+  ]
+},
+'ch1_letter': {
+  chapter: '第一章 蛋',
+  icon: '✉️',
+  text: `信封上印住一個蛋狀橢圓形，入面有個十字架嘅 Logo。
+
+信入面寫住：
+
+<span class="whisper">「親愛嘅洪家各位：
+春分前夕（三月二十日），請於黃昏前返到家中。
+將大門配匙交予本會管理，以確保「儀式」順利進行。
+重生會將引領各位通往樂園。
+——譚弟兄」</span>
+
+<span class="highlight">所以佢哋係自願？定係被騙？</span>
+
+春分前夕⋯⋯三月二十日⋯⋯0320？`,
+  onEnter: (s) => { setFlag(s, 'read_letter'); },
+  choices: [
+    { text: '查看 Chloe 嘅手機', next: 'ch1_phone', condition: (s) => !s.flags.phone_unlocked },
+    { text: '帶齊嘢離開呢間屋', next: 'ch1_leave' }
+  ]
+},
+'ch1_leave': {
+  chapter: '第一章 蛋',
+  icon: '🕛',
+  text: `我將搵到嘅嘢收拾好，坐喺梳化上面等。
+
+只要十二點前佢哋未返嚟，我就報警。
+
+「滴嗒⋯⋯滴嗒⋯⋯」
+
+屋企靜到秒針每擺一下都聽到。不安嘅空氣圍繞住我全身。
+
+「滴嗒。」
+
+十二點。
+
+「好，報警。」
+
+就喺我撥打 999 之際——
+
+<span class="highlight">「叮噹。」</span>
+
+門鈴響咗。`,
+  choices: [
+    { text: '去開門', next: 'ch1_open_door' },
+    { text: '先從門孔偷睇', next: 'ch1_peek' }
+  ]
+},
+'ch1_open_door': {
+  chapter: '第一章 蛋',
+  icon: '🐰',
+  text: `我行去門口，直接拉開道門。
+
+外面企住一個——
+
+着住兔子戲服嘅人。
+
+造工粗糙而真實嘅兔面具，鮮紅嘅雙眼直直望住我。
+
+<span class="highlight">兔子人用紅目直視咗你。</span>
+
+佢雙手拎住一把長斧，潔白嘅服裝染滿不明污垢同血跡。
+
+「E⋯⋯g⋯⋯g⋯⋯」
+
+佢發出沙啞嘅電音，舉起長斧——
+
+<span class="system">【BAD END】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_1'); },
+  choices: []
+},
+'ch1_peek': {
+  chapter: '第一章 蛋',
+  icon: '👁️',
+  text: `我慢慢靠近門孔，偷睇外面。
+
+外面企住一個着住兔子戲服嘅人。佢造工粗糙嘅兔面具，令我忘記咗戲服入面嘅佢都係一個人類。
+
+「叮噹。」
+
+佢又撳門鐘。
+
+「叮噹叮噹叮噹叮噹叮噹⋯⋯」
+
+門孔突然俾某樣嘢黏住，咩都睇唔到。
+
+我忍唔住爆發，拉開道門拎住把刀望向走廊——兔人已經唔見咗。
+
+但後樓梯傳來不明腳步聲，越来越近。
+
+「叩⋯⋯叩⋯⋯叩⋯⋯叩⋯⋯」
+
+「呯！」
+
+大門被人用長斧瘋狂揮砍！`,
+  choices: [
+    { text: '匿入 Chloe 間房衣櫃', next: 'ch1_hide' },
+    { text: '去廚房拎刀然後報警', next: 'ch1_fight_prep' }
+  ]
+},
+'ch1_hide': {
+  chapter: '第一章 蛋',
+  icon: '🚪',
+  text: `大門被砍到快要破爛。我心跳加速，腦海一片混亂。
+
+我要匿埋自己⋯⋯但係⋯⋯
+
+<span class="whisper">（我係咪應該先搵把武器先？）</span>
+
+廚房就喺隔離。如果我去攞把刀，可能仲有機會反擊。但如果花太多時間，兔人可能已經衝入嚟⋯⋯`,
+  choices: [
+    { text: '去廚房攞刀再匿入衣櫃', next: 'ch1_hide_armed' },
+    { text: '即刻匿入 Chloe 間房衣櫃', next: 'ch1_hide_unarmed' }
+  ]
+},
+'ch1_hide_armed': {
+  chapter: '第一章 蛋',
+  icon: '🔪',
+  text: `我衝入廚房，從刀架抽咗把菜刀。
+
+手震到捉唔實，但我無時間諗。
+
+然後我衝入 Chloe 間房，匿入衣櫃。
+
+破門聲停止。代表佢⋯⋯入咗嚟。
+
+兔人行入 Chloe 間房，口中默默唸住：「E⋯⋯g⋯⋯g⋯⋯」
+
+佢行去客廳，凝視住碗中嘅蛋。
+
+我趁呢個時候從衣櫃走出嚟，雙手捉實把菜刀——
+
+一刀刺入佢頸側！
+
+「嘶！」佢發出撕叫，轉頭用鮮紅嘅眼睛盯實我。
+
+但佢⋯⋯死唔去？
+
+佢身體抽搐幾秒，慢慢拎返起長斧——
+
+我即刻向走廊逃走，跑到 G 樓——
+
+「咔！」隻腳俾捕獸器夾中！
+
+「救命呀！」`,
+  onEnter: (s) => { addItem(s, '菜刀', '🔪'); setFlag(s, 'armed_with_knife'); },
+  choices: [
+    { text: '繼續大叫求救', next: 'ch2_rescue' }
+  ]
+},
+'ch1_hide_unarmed': {
+  chapter: '第一章 蛋',
+  icon: '😱',
+  text: `我衝入 Chloe 間房，匿入衣櫃。雙手空空，只有恐懼。
+
+破門聲停止。代表佢⋯⋯入咗嚟。
+
+兔人行入 Chloe 間房，口中默默唸住：「E⋯⋯g⋯⋯g⋯⋯」
+
+佢行去客廳，凝視住碗中嘅蛋。
+
+我趁呢個時候從衣櫃走出嚟，赤手空拳——
+
+一掌劈向佢頸側！
+
+「嘶！」佢發出撕叫，轉頭用鮮紅嘅眼睛盯實我。
+
+完全無效。佢一巴掌拍飛我成個人。
+
+我撞穿窗戶，從二楼跌落去。
+
+<span class="system">【BAD END】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_2'); },
+  choices: []
+},
+'ch1_fight_prep': {
+  chapter: '第一章 蛋',
+  icon: '🔪',
+  text: `我衝去廚房拎咗把菜刀，然後躲喺門後。
+
+大門被砍穿一個缺口，一隻戴着污漬手套嘅手伸入嚟扭門柄。
+
+「噠。」
+
+門開咗。兔人行入嚟，四圍望。
+
+我趁佢背對住我嗰陣，用盡全力一刀刺過去——
+
+但刀⋯⋯刺唔入。就好似刺到一層極厚嘅橡膠。
+
+兔人慢慢轉頭，鮮紅雙眼直視我。
+
+「Egg⋯⋯」
+
+<span class="highlight">佢一巴掌拍飛我成個人。我撞穿窗戶，從二楼跌落去。</span>
+
+<span class="system">【BAD END】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_2'); },
+  choices: []
+},
+
+/* --- CHAPTER 2: UNCLE QUEN --- */
+'ch2_rescue': {
+  chapter: '第二章 泉叔',
+  icon: '🔫',
+  text: `「救命呀！救命啊！！」
+
+大廈外某個暗位，突然跑出一個約莫四十歲尾嘅阿叔。佢戴住鴨舌帽、牛仔背心，拎住枝唔知係真槍定氣槍嘅物體。
+
+「喂，你踩落去做乜。」
+
+佢好熟手咁用小刀幫我解除捕獸器陷阱，然後背起我入一架貨 van。
+
+「上面有隻兔⋯⋯有隻兔想殺我呀！」
+
+「我知我知。俾你累死⋯⋯」
+
+佢踩油門急速駛離大廈。`,
+  choices: [
+    { text: '繼續', next: 'ch2_iron_house' }
+  ]
+},
+'ch2_iron_house': {
+  chapter: '第二章 泉叔',
+  icon: '🏚️',
+  text: `車駛到一個偏離城市嘅郊區。四面環林，生長咗好多松木樹。
+
+泉叔將我背入一間鐵皮屋。雨水滴落鐵皮屋頂，異常大聲。
+
+「叫我泉哥。」佢放我到床上。
+
+佢點枝煙，緩緩咁講：
+
+「你遇到嗰隻兔子人，報警無用。我俾兩個選擇你。」
+
+「一，你忘記今晚所有事情，當一切無發生過。」
+
+「二，拋棄宜家一切生活，我同你講關於兔子人嘅事。」
+
+我趁泉叔出去準備嘢食嘅時候，周圍望下間屋。
+
+牆上貼住好多報紙剪報，全部都係關於離奇失蹤案件。仲有一張相——泉叔同一個女人同細路嘅合照，睇落好幸福。
+
+相下面寫住：「阿美、小傑——我會救返你哋。」
+
+<span class="whisper">（泉叔嘅家人⋯⋯都係復活蛋？）</span>
+
+<span class="system">【重要抉擇】</span>`,
+  choices: [
+    { text: '選擇一：忘記一切', next: 'ch2_forget' },
+    { text: '選擇二：了解兔子人', next: 'ch2_learn' }
+  ]
+},
+'ch2_forget': {
+  chapter: '第二章 泉叔',
+  icon: '💭',
+  text: `「⋯⋯我揀⋯⋯忘記。」
+
+泉叔望住我，冇表情。
+
+「你確定？你女朋友仲生死未卜。」
+
+我望住手機上同 Chloe 嘅合照。
+
+⋯⋯
+
+「⋯⋯我改主意。我唔可以就咁放棄佢。」
+
+<span class="whisper">（如果連我都放棄佢，仲有邊個會記得佢哋？）</span>`,
+  choices: [
+    { text: '選擇二：了解兔子人', next: 'ch2_learn' }
+  ]
+},
+'ch2_learn': {
+  chapter: '第二章 泉叔',
+  icon: '📖',
+  text: `「你女朋友同佢全家應該變成咗『復活蛋』。」泉叔淡淡地說。
+
+「復活蛋係裝有人類靈魂嘅蛋。蛋殼一旦破碎，就形同魂飛魄散。」
+
+「兔子人嘅目的，係收集呢啲蛋，然後打碎蛋殼，吞食入面鮮紅嘅蛋液——即係人類嘅靈魂。」
+
+我想起我坐爆嗰隻蛋⋯⋯
+
+「你⋯⋯整爛咗一隻？」泉叔望住我表情就知。
+
+「⋯⋯係。係 Chloe 細佬。」
+
+泉叔沉默一陣：「唔係你嘅錯。將呢股憤怒放喺兔子人身上。」
+
+「但你要知道，只要春天結束前搵唔到畫有佢哋樣嘅復活蛋，佢哋嘅靈魂就會永遠被困。」
+
+「仲有——你俾兔人用紅目望過。呢個意思係，你已經被標記咗。」
+
+泉叔行去長櫃，拎出幾樣嘢：「呢啲係我多年來對付兔人嘅工具。你揀啱用嘅。」
+
+佢打開一個木箱，入面有：
+- 一把摺疊刀（刀柄刻住奇怪嘅符文）
+- 一件厚重嘅外套（內襯有銀線縫製嘅保護圖案）
+- 一個細小嘅銅鈴（據講可以短暫擊退兔人）
+
+<span class="system">【獲得知識：兔子人嘅真相】</span>
+<span class="system">【獲得道具：摺疊刀】</span>
+<span class="system">【獲得道具：泉叔嘅外套】</span>
+<span class="system">【獲得道具：驅兔銅鈴】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'know_truth');
+    addItem(s, '摺疊刀', '🔪');
+    addItem(s, '泉叔嘅外套', '🧥');
+    addItem(s, '驅兔銅鈴', '🔔');
+  },
+  choices: [
+    { text: '「點樣先可以救返 Chloe？」', next: 'ch2_how_to_save' },
+    { text: '「兔子人到底係乜嘢？」', next: 'ch2_what_rabbit' },
+    { text: '探索地下室', next: 'ch2_basement' }
+  ]
+},
+'ch2_basement': {
+  chapter: '第二章 泉叔',
+  icon: '🕯️',
+  text: `「地下室？」泉叔望住我，眼神有啲閃縮：「你點知有地下室？」
+
+我指住牆角：「嗰度有塊地板同其他地方唔同，顏色深咗。」
+
+泉叔沉默一陣，然後行過去推開一個長櫃。下面果然有一道地板門。
+
+「⋯⋯你既然發現咗，就落去睇下。」佢遞咗條鎖匙俾我。
+
+我拉開地板門，行落去。
+
+地下室好細，得幾呎見方。牆上掛住幾幅相——全部都係泉叔同一個女人同細路嘅合照。
+
+喺角落，我見到兩隻蛋。
+
+一隻畫住一個溫柔嘅女人——應該係泉叔老婆。
+另一隻畫住一個細路仔——應該係佢個仔。
+
+兩隻蛋都出現咗裂痕。
+
+泉叔跟住落嚟，望住啲蛋，眼神好痛苦：「我救唔到佢哋⋯⋯但我唔會放棄。」
+
+佢從牆上拎落一個舊皮袋：「呢度有我多年來收集嘅資料。你帶走佢。」
+
+入面有：
+- 一本手寫筆記，記錄咗各種對付兔人嘅方法
+- 一張舊相片，相中有一個日本女人站喺鎖羅盆嘅水井前
+- 一個細小嘅勾玉，據講可以保護靈魂
+
+<span class="system">【獲得道具：泉叔嘅筆記】</span>
+<span class="system">【獲得道具：舊相片】</span>
+<span class="system">【獲得道具：靈魂勾玉】</span>
+<span class="system">【獲得線索：泉叔嘅過去】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'explored_basement');
+    addItem(s, '泉叔嘅筆記', '📓');
+    addItem(s, '舊相片', '📷');
+    addItem(s, '靈魂勾玉', '🔮');
+  },
+  choices: [
+    { text: '「點樣先可以救返 Chloe？」', next: 'ch2_how_to_save' },
+    { text: '「兔子人到底係乜嘢？」', next: 'ch2_what_rabbit' }
+  ]
+},
+'ch2_what_rabbit': {
+  chapter: '第二章 泉叔',
+  icon: '🐰',
+  text: `「兔子人⋯⋯佢哋係啃食人類靈魂嘅生物。」泉叔點枝煙。
+
+「佢哋外表着住兔子戲服，但你永遠唔知入面係人定係⋯⋯其他嘢。」
+
+「佢哋嘅紅目有兩種狀態：普通紅色代表警戒，鮮紅色代表強烈殺意。一旦被鮮紅雙目直視，你就會被標記——佢哋會唔斷追你，直到你死或者解決事件。」
+
+「我阿爺成日同我講，我呢一生注定要同兔子人周旋。後生嗰陣我都驚，但慣咗就無嘢。」
+
+「以前我都妄想過可以過正常人生活，但換嚟嘅，只有悲劇。」
+
+<span class="system">【獲得知識：紅目嘅意義】</span>`,
+  onEnter: (s) => { setFlag(s, 'know_red_eye'); },
+  choices: [
+    { text: '「點樣先可以救返 Chloe？」', next: 'ch2_how_to_save' }
+  ]
+},
+'ch2_how_to_save': {
+  chapter: '第二章 泉叔',
+  icon: '🌅',
+  text: `「要救返你女朋友，就要喺春天結束前搵出佢嘅復活蛋，然後用正確嘅方法將靈魂還原。」
+
+「但首先，你要搵到一個叫宋文德嘅人。佢比我更了解復活蛋嘅來源。」
+
+「仲有——重生會。嗰個邪教係一切嘅源頭。佢哋用某種儀式令人變成蛋。」
+
+泉叔俾咗我一把摺疊刀同一件外套。
+
+「準備好未？我哋要返去事發地點調查。」
+
+<span class="system">【獲得道具：摺疊刀】</span>
+<span class="system">【獲得道具：泉叔嘅外套】</span>`,
+  onEnter: (s) => {
+    addItem(s, '摺疊刀', '🔪');
+    addItem(s, '泉叔嘅外套', '🧥');
+  },
+  choices: [
+    { text: '返去 Chloe 屋企調查', next: 'ch3_return' }
+  ]
+},
+
+/* --- CHAPTER 3: INVESTIGATION --- */
+'ch3_return': {
+  chapter: '第三章 調查',
+  icon: '🔍',
+  text: `同一泉叔返到 Chloe 屋企。大白天，走廊嘅涼風依然似夜裏嘅暗風。
+
+泉叔用開鎖工具打開門。入面同上次一樣，白燈仲開住。
+
+原本放喺碗嘅復活蛋已經唔見哂——兔人嚟過。
+
+「快啲搵線索。」泉叔話。
+
+我決定先調查⋯⋯
+
+<span class="whisper">（上次無時間仔細搜索，今次要搵出所有隱藏嘅嘢。）</span>`,
+  choices: [
+    { text: '細佬嘅電腦', next: 'ch3_computer' },
+    { text: '父母房間', next: 'ch3_parents_room' },
+    { text: 'Chloe 房間嘅書桌抽屜', next: 'ch3_desk' },
+    { text: '搜索客廳', next: 'ch3_living_room' },
+    { text: '檢查廚房', next: 'ch3_kitchen' }
+  ]
+},
+'ch3_living_room': {
+  chapter: '第三章 調查',
+  icon: '📺',
+  text: `我仔細搜索客廳。
+
+電視櫃下面有刮花嘅痕跡，似乎有嘢被拖過。我趴低望——
+
+喺梳化底，我搵到一個細小嘅錄音筆。
+
+撳播放，係 Chloe 嘅聲音：
+
+<span class="whisper">「如果你聽到呢段錄音，代表我已經變咗蛋。
+重生會嘅人話可以治好爸爸，但我觉得唔對路。
+佢哋要我哋喺春分前夕返屋企，仲要交埋鎖匙。
+我偷偷收埋咗一條後備鎖匙，喺⋯⋯」</span>
+
+錄音到呢度就斷咗。似乎 Chloe 俾人發現。
+
+但喺錄音筆下面，有一張紙條寫住：「鎖匙喺花盆」。
+
+我望望窗台嘅花盆——
+
+真係有一條鎖匙！
+
+<span class="system">【獲得道具：錄音筆】</span>
+<span class="system">【獲得道具：後備鎖匙】</span>
+<span class="system">【獲得線索：Chloe 嘅警告】</span>`,
+  onEnter: (s) => {
+    addItem(s, '錄音筆', '🎙️');
+    addItem(s, '後備鎖匙', '🗝️');
+    setFlag(s, 'found_recording');
+  },
+  choices: [
+    { text: '去細佬電腦', next: 'ch3_computer', condition: (s) => !s.flags.found_tan },
+    { text: '去父母房', next: 'ch3_parents_room', condition: (s) => !s.flags.checked_parents },
+    { text: '去 Chloe 書桌', next: 'ch3_desk', condition: (s) => !s.flags.checked_desk }
+  ]
+},
+'ch3_kitchen': {
+  chapter: '第三章 調查',
+  icon: '🍳',
+  text: `廚房同上次一樣凌亂。但我留意到雪櫃後面有啲嘢。
+
+我移開雪櫃——牆上有一道刮痕，似乎有人移動過雪櫃好多次。
+
+喺刮痕盡頭，我搵到一個暗格。入面有一疊文件。
+
+文件係重生會嘅內部通訊記錄。入面提到：
+
+<span class="whisper">「儀式需要七隻蛋。目前已有四隻。
+洪家四口剛好。但仲需要多三隻。
+譚弟兄建議從佢屋企人入手。
+——宋文德」</span>
+
+<span class="highlight">宋文德⋯⋯係重生會嘅人？</span>
+
+定係⋯⋯有人冒充佢？
+
+<span class="system">【獲得道具：重生會文件】</span>
+<span class="system">【獲得線索：宋文德嘅身份】</span>`,
+  onEnter: (s) => {
+    addItem(s, '重生會文件', '📄');
+    setFlag(s, 'found_song_files');
+  },
+  choices: [
+    { text: '去細佬電腦', next: 'ch3_computer', condition: (s) => !s.flags.found_tan },
+    { text: '去父母房', next: 'ch3_parents_room', condition: (s) => !s.flags.checked_parents },
+    { text: '去 Chloe 書桌', next: 'ch3_desk', condition: (s) => !s.flags.checked_desk }
+  ]
+},
+'ch3_computer': {
+  chapter: '第三章 調查',
+  icon: '💻',
+  text: `細佬嘅電腦仲開住。實況網站嘅留言板上，佢嘅粉絲留咗重要嘅言論：
+
+女人湯圓520：「佢係咪縮細咗⋯⋯？」
+蜘蛛小子：「台主直播訓覺？幾時可以再望到你家姐？」
+
+我撳咗「重播」，返睇細佬嗰日嘅錄影。
+
+黃昏時分，細佬不斷打呵欠，然後上床休息。佢一路訓，身體就一路捲縮⋯⋯
+
+直到身體完全唔符合本身身形嘅比例——佢變成咗一隻蛋。
+
+而喺我嚟到之前，有個不明人入咗屋——
+
+<span class="highlight">係嗰個保安！重生會嘅譚國源！</span>
+
+佢入到細佬房東張西望，似乎在搵啲乜⋯⋯
+
+我搜尋咗外父嘅電腦，發現重生會嘅網站。
+
+網站好簡單，得一個太陽藍天嘅背景，同幾隻字：「出生、再生、重生」。
+
+但係⋯⋯當我輸入「重生會」搜尋之後，網頁突然變咗。
+
+原本綠油油嘅草地，變成一朵朵貌似彼岸花嘅植物，就似鮮血染滿大地。
+
+仲有一個公告欄：
+
+<span class="whisper">「家庭日——四月十四日，龍尾村公所等候。
+重生會將攜你前往『樂園』享受永永遠遠嘅快樂。」</span>
+
+仲有「七步求導」嘅詳情：
+1. 背唱《紅神目詠歌》
+2. 戴白兔頭套，槍殺獵人
+3. 採集彼岸花，磨爛成渣飲用
+4. 持續跪拜二十四分鐘
+5. 生吞雞蛋
+6. 直視紅光
+7. 奉獻最珍貴嘅物品
+
+<span class="whisper">（紅神目⋯⋯就係兔子人拜祭嘅神明？）</span>
+
+<span class="system">【獲得線索：譚國源嘅樣貌】</span>
+<span class="system">【獲得線索：重生會嘅儀式】</span>
+<span class="system">【獲得線索：紅神目嘅名字】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'found_tan');
+    addItem(s, '保安嘅相片', '📸');
+    setFlag(s, 'know_ritual_steps');
+    setFlag(s, 'know_red_god_name');
+  },
+  choices: [
+    { text: '去父母房調查', next: 'ch3_parents_room', condition: (s) => !s.flags.checked_parents },
+    { text: '去 Chloe 書桌', next: 'ch3_desk', condition: (s) => !s.flags.checked_desk },
+    { text: '離開，去搵宋文德', next: 'ch3_find_song' }
+  ]
+},
+'ch3_parents_room': {
+  chapter: '第三章 調查',
+  icon: '🛏️',
+  text: `Chloe 父母間房，床上面放住外母嘅復活蛋——但蛋殼出現咗裂痕。
+
+泉叔小心翼翼咁拎起佢：「仲未完全碎⋯⋯但時間唔多。」
+
+喺床頭櫃，我發現一張醫院嘅癌症診斷報告——外父嘅。
+
+日期係三個月前。
+
+<span class="whisper">（所以重生會係用治好癌症嚟引誘佢哋加入？）</span>
+
+泉叔將蛋放入一個鋪住棉花嘅盒入面保護好。
+
+<span class="system">【獲得道具：外母嘅復活蛋（有裂痕）】</span>
+<span class="system">【獲得線索：外父嘅癌症報告】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'checked_parents');
+    addItem(s, '外母嘅復活蛋', '🥚');
+    addItem(s, '癌症報告', '📋');
+  },
+  choices: [
+    { text: '去細佬電腦', next: 'ch3_computer', condition: (s) => !s.flags.found_tan },
+    { text: '去 Chloe 書桌', next: 'ch3_desk', condition: (s) => !s.flags.checked_desk },
+    { text: '離開，去搵宋文德', next: 'ch3_find_song' }
+  ]
+},
+'ch3_desk': {
+  chapter: '第三章 調查',
+  icon: '📔',
+  text: `Chloe 嘅書桌抽屜入面，我搵到一本日記。
+
+最後幾頁寫住：
+
+<span class="whisper">「3月15日：爸爸嘅病情惡化。重生會嘅人又嚟咗，話有方法可以『重生』。」
+
+「3月18日：全家決定參加儀式。雖然我覺得好荒謬，但爸爸話呢係唯一希望。」
+
+「3月19日：明天就係春分前夕。如果成功，爸爸就可以好返。如果唔成功⋯⋯Egg is a lie.」</span>
+
+最後一句⋯⋯同手機備忘入面嗰句一模一樣。
+
+喺日記下面，我仲搵到一張重生會嘅「七步求導」挑戰卡。
+
+入面詳細列明每一步：
+
+<span class="whisper">第一步：背唱《紅神目詠歌》——以示歌頌教會
+第二步：戴白兔頭套，槍殺獵人——以示人類對自然嘅過度殺戮
+第三步：採集彼岸花，磨爛成渣飲用——以示面對死亡嘅勇氣
+第四步：持續跪拜二十四分鐘——以示虔誠
+第五步：生吞雞蛋——瘋狂嘅第一步
+第六步：直視紅光——同兔人紅目一樣
+第七步：奉獻最珍貴嘅物品——無條件奉獻</span>
+
+<span class="highlight">Egg is a lie. 蛋係一個謊言。</span>
+
+Chloe 一早知道會出事。
+
+<span class="system">【獲得線索：Chloe 嘅日記】</span>
+<span class="system">【獲得道具：七步求導卡】</span>
+<span class="system">【獲得線索：重生會嘅七步儀式】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'checked_desk');
+    addItem(s, 'Chloe 嘅日記', '📔');
+    addItem(s, '七步求導卡', '🃏');
+    setFlag(s, 'know_egg_is_lie');
+    setFlag(s, 'know_7_steps');
+  },
+  choices: [
+    { text: '去細佬電腦', next: 'ch3_computer', condition: (s) => !s.flags.found_tan },
+    { text: '去父母房', next: 'ch3_parents_room', condition: (s) => !s.flags.checked_parents },
+    { text: '離開，去搵宋文德', next: 'ch3_find_song' }
+  ]
+},
+'ch3_find_song': {
+  chapter: '第三章 調查',
+  icon: '☕',
+  text: `泉叔帶我去旺角一間叫「卡門咖啡店」嘅樓上鋪。
+
+宋文德——一個斯文嘅中年男士，三件套深啡色西裝、文青眼鏡，一身書卷知性氣質。
+
+「你被兔子人用紅目直視過？」佢第一句就問。
+
+「係⋯⋯」
+
+「咁你屋企人都唔安全。兔子人會追住你嘅血脈去。」
+
+我即刻打俾父母——無人接聽。打咗三十幾次，終於接通——
+
+「嘶～」
+
+⋯⋯係兔子人嘅聲音。
+
+<span class="highlight">兔子人去咗我屋企。</span>
+
+我崩潰咗。泉叔用毛巾掩住我口鼻，将我弄暈帶走。
+
+醒返嗰陣，泉叔手上多咗一隻粉嫩帶紫嘅詭異手指。
+
+「我打咗佢一隻手指落嚟。但逃走咗⋯⋯你父母⋯⋯」
+
+泉叔沉默。
+
+<span class="system">【重要事件：父母失蹤】</span>`,
+  onEnter: (s) => { setFlag(s, 'parents_taken'); },
+  choices: [
+    { text: '繼續', next: 'ch3_song_explain' }
+  ]
+},
+'ch3_song_explain': {
+  chapter: '第三章 調查',
+  icon: '🗺️',
+  text: `宋文德解釋：
+
+「重生會嘅最終目的，係喺春分之日完成『大儀式』——將足夠數量嘅人類靈魂獻祭俾佢哋拜祭嘅神明『赤目』。」
+
+「兔子人係儀式嘅執行者。而重生會嘅教徒，係負責篩選同標記目標。」
+
+「要阻止一切，你需要喺鎖羅盆——一條廢棄村落——搵到儀式嘅核心，然後用『八方鏡』逆轉儀式。」
+
+宋文德遞给我一塊古舊嘅鏡。
+
+「呢塊鏡可以反射靈魂嘅力量。但只可以用一次。」
+
+佢又遞給我一個細小嘅布袋。
+
+「呢度有一啲鹽同米。如果遇到兔人，撒喺地上可以延緩佢哋幾秒。」
+
+「仲有——」宋文德壓低聲音：「你必須搵到一把叫『八赤刀』嘅武士刀。刃身反光面呈現鮮紅，可以斬妖除魔，令兔人死於業火之下。」
+
+「八赤刀？邊度有？」
+
+「據講喺鎖羅盆附近嘅小島。但你要快，因為重生會都喺搵。」
+
+宋文德望住我，眼神沉重：「仲有一件事。如果你被兔人嘅紅目直視太耐，你嘅眼睛會開始流血。呢個係靈魂被侵蝕嘅徵兆。到時⋯⋯你就會開始看到另一個世界。」
+
+佢又拎出一封信：「呢個係我喺重生會網站搵到嘅《紅神目詠歌》全文。你記住，呢首歌係成個儀式嘅核心。」
+
+<span class="whisper">《紅神目詠歌》
+
+赤日赤日紅神目
+我等願意奉上眼
+赤日赤日紅神目
+我等願意奉上耳
+赤日赤日紅神目
+我等願意奉上臟
+
+赤之天、赤之海、赤之山
+我等正向你祭拜
+請你於逢魔之時紆尊降臨
+
+敬畏的神明啊
+原諒我等祖先饕之罪
+我願將凡世之羔羊饋贈
+
+赤目赤目紅神目
+我等願意被召入樂園
+
+四十四名門徒
+將會走過重生浴
+吾等願意獻上純潔的靈魂
+
+赤日赤日紅神目
+黑暗之兆再降臨
+期願樂園之扉再重臨
+
+願你恩賜吾等享永生
+願你再以光耀的姿態
+照亮全世界</span>
+
+「四十四名門徒、永生、獻上靈魂⋯⋯全部都係關鍵字眼。」宋文德說：「重生會相信，透過獻祭四十四個靈魂，佢哋可以獲得長生不老，打開通往『樂園』嘅大門。」
+
+「長生不老？」
+
+「係。佢哋唔係單純拜祭，而係想透過紅神目嘅力量，獲得永生。呢個就係佢哋最終嘅目的。」
+
+宋文德又講：「仲有一間公司叫『西品製藥』，表面上係一間正當嘅製藥公司，但實際上同重生會有密切聯繫。佢哋嘅創辦人叫西品盛，據講已經活咗超過一百歲。」
+
+「一百歲？！」
+
+「係。佢就係透過紅神目嘅力量，獲得長生不老。但代價係，佢要不斷提供靈魂俾紅神目。」
+
+「所以重生會嘅儀式，其實係為咗供養西品盛？」
+
+「可以咁講。而家西品盛已經好老，需要更多靈魂嚟維持生命。所以佢哋先至咁急住完成儀式。」
+
+「仲有一個人你要小心——東武勳。佢係西品製藥嘅高層，負責執行所有同重生會有關嘅骯髒工作。佢好危險，而且好聰明。」
+
+<span class="system">【獲得道具：八方鏡】</span>
+<span class="system">【獲得道具：驅魔鹽米】</span>
+<span class="system">【獲得道具：紅神目詠歌】</span>
+<span class="system">【獲得知識：大儀式嘅真相】</span>
+<span class="system">【獲得知識：八赤刀嘅線索】</span>
+<span class="system">【獲得知識：紅目流血嘅警告】</span>
+<span class="system">【獲得知識：西品製藥】</span>
+<span class="system">【獲得知識：長生不老嘅代價】</span>
+<span class="system">【獲得知識：東武勳嘅威脅】</span>`,
+  onEnter: (s) => {
+    addItem(s, '八方鏡', '🪞');
+    addItem(s, '驅魔鹽米', '🧂');
+    addItem(s, '紅神目詠歌', '📜');
+    setFlag(s, 'know_ritual');
+    setFlag(s, 'know_blade');
+    setFlag(s, 'know_eye_blood');
+    setFlag(s, 'know_xipin');
+    setFlag(s, 'know_immortality');
+    setFlag(s, 'know_hymn_full');
+    setFlag(s, 'know_dong');
+  },
+  choices: [
+    { text: '去譚國源屋企調查', next: 'ch3b_tan_apartment' },
+    { text: '先返去自己屋企確認父母情況', next: 'ch4_go_home' }
+  ]
+},
+
+/* --- CHAPTER 3B: THE CULT CAMP --- */
+'ch3b_tan_apartment': {
+  chapter: '第三章B 邪教',
+  icon: '🏢',
+  text: `我哋一齊去譚國源嘅屋企。
+
+泉叔已經綁住佢喺度，但佢依然口密到不得了。
+
+宋文德提議：「我扮重生會嘅求導者，佢應該會同我講真話。」
+
+佢從背包拎出一件黑袍——求導袍。
+
+<span class="system">【獲得道具：求導袍】</span>
+
+宋文德著住求導袍，掛住吊咀，行入去。
+
+譚國源一見到佢，即刻跪低：「求導者！你嚟救我！」
+
+「我嚟帶你去樂園。」宋文德用低沉嘅聲音講。
+
+「真係？我可以去樂園？！」
+
+「但你要先回答我嘅問題。」
+
+「咩問題都答！」
+
+「重生會下一步計劃係乜？」
+
+譚國源興奮咁講：「家庭日！四月十四日，龍尾村公所！所有信徒都會去！」
+
+宋文德望向我，我即刻明白——呢個係搵Chloe嘅機會。
+
+<span class="system">【獲得線索：家庭日嘅地點】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'know_family_day');
+  },
+  choices: [
+    { text: '繼續', next: 'ch3b_family_day' }
+  ]
+},
+'ch3b_family_day': {
+  chapter: '第三章B 邪教',
+  icon: '🎪',
+  text: `四月十四日。我哋去咗龍尾村公所。
+
+呢度變成咗一個類似年宵嘅小維園，每個攤位都有遊戲。
+
+要成為正式信徒，就要通過「七步求導」：
+
+1. 背唱《紅神目詠歌》
+2. 戴白兔頭套，槍殺獵人
+3. 採集彼岸花，磨爛成渣飲用
+4. 持續跪拜二十四分鐘
+5. 生吞雞蛋
+6. 直視紅光
+7. 奉獻最珍貴嘅物品
+
+我為咗搵Chloe，決定參加。
+
+喺第六關「直視紅光」嗰陣，我感覺到眼角開始痕癢⋯⋯
+
+我伸手抹一下——係血。
+
+我嘅眼睛開始流血。紅神目嘅力量侵蝕緊我。
+
+但我繼續行落去。
+
+第七關，求導者要我交出最珍貴嘅嘢。
+
+佢竟然知道我最珍貴嘅係八方鏡。
+
+「塊鏡要奉獻出嚟？」
+
+我忍痛交出。
+
+但就喺呢個時候，一把女聲從旁邊傳出：
+
+「我都識八方鏡。」
+
+我轉身——一個短髮女仔企喺度。佢著住深色牛仔褸，眼神冷冽。
+
+「你係邊個？」
+
+「沅彤。」佢望住我：「你嘅八方鏡，原本係我婆婆嘅嘢。」
+
+<span class="system">【重要事件：沅彤出現】</span>
+<span class="system">【失去道具：八方鏡（被奪走）】</span>`,
+  onEnter: (s) => {
+    s.inventory = s.inventory.filter(i => i.name !== '八方鏡');
+    setFlag(s, 'met_yuan_tong');
+    setFlag(s, 'lost_mirror');
+    setFlag(s, 'eye_bleeding');
+  },
+  choices: [
+    { text: '繼續', next: 'ch3b_steal_mirror' }
+  ]
+},
+'ch3b_steal_mirror': {
+  chapter: '第三章B 邪教',
+  icon: '🌙',
+  text: `凌晨兩點。我、沅彤、宋文德一齊行動。
+
+宋文德負責引開特別求導者。
+
+我同沅彤去供品庫偷返八方鏡。
+
+守衛係重生會嘅財政大臣。
+
+沅彤二話不說，一嘢打暈佢。
+
+我哋拎返八方鏡，仲搵到一把武士刀——
+
+八赤刀。
+
+沅彤望住把刀，眼神複雜：「呢把⋯⋯係我婆婆嘅遺物。」
+
+「你識呢把刀？」
+
+「八赤刀。可以斬妖除魔，令兔人死於業火之下。但係⋯⋯刀斷咗一半。」
+
+就喺我哋準備離開嘅時候，宋文德跑返嚟：
+
+「快啲走！重生會嘅人全部消失咗！佢哋一早收到風聲撤離！」
+
+我哋衝出營地，發現所有信徒同求導者都唔見咗。
+
+淨低嘅只有信件同線索。
+
+宋文德拎起一封信：「佢哋去咗鎖羅盆。最終儀式會喺嗰度進行。」
+
+<span class="system">【獲得道具：八方鏡（奪回）】</span>
+<span class="system">【獲得道具：八赤刀（斷裂）】</span>
+<span class="system">【獲得線索：重生會嘅真正位置】</span>`,
+  onEnter: (s) => {
+    addItem(s, '八方鏡', '🪞');
+    addItem(s, '八赤刀', '⚔️');
+    setFlag(s, 'got_mirror_back');
+    setFlag(s, 'found_blade');
+  },
+  choices: [
+    { text: '去泉叔嘅鐵皮屋', next: 'ch3b_iron_house' },
+    { text: '直接去鎖羅盆', next: 'ch4_go_village' }
+  ]
+},
+'ch3b_iron_house': {
+  chapter: '第三章B 邪教',
+  icon: '🏚️',
+  text: `我哋去泉叔嘅鐵皮屋。
+
+但泉叔唔喺度。地上滿係碎裂嘅雞蛋殼、空酒樽、藥物罐。
+
+泉叔半死不活咁瞓喺床上，手上仲揸住針筒。
+
+「泉叔！」我衝過去。
+
+「阿政⋯⋯」泉叔虛弱咁望住我：「你返嚟喇⋯⋯」
+
+「你點解搞到咁？」
+
+「每年呢幾個月份都總會係咁⋯⋯」泉叔咳咗幾聲：「我飲咗兔血，上癮咗。得生雞蛋可以頂下癮。」
+
+我想起宋文德講過，飲咗兔血就會對靈魂上癮。
+
+泉叔帶我去地下室，入面有一隻被困嘅兔子人。
+
+「呢隻⋯⋯係我徒弟。」泉叔眼神痛苦：「佢為咗追殺兔人，飲咗太多兔血，最後變成咁。」
+
+我望住籠入面嘅兔子人，佢身上插住導管，不斷被抽血。
+
+「呢個係『鼠盤』。」泉叔拎出一個八角型鐵盒，入面有隻老鼠：「只要將兔血滴入去，尋血鼠就會追蹤復活蛋嘅位置。」
+
+「即係可以搵到Chloe？」
+
+「係。但你要快。重生會已經去咗鎖羅盆。」
+
+泉叔將鼠盤交俾我，仲有一瓶兔血。
+
+「小心東武勳。佢係西品製藥嘅人，都飲過兔血，好危險。」
+
+<span class="system">【獲得道具：鼠盤】</span>
+<span class="system">【獲得道具：兔血】</span>
+<span class="system">【獲得知識：泉叔嘅徒弟】</span>`,
+  onEnter: (s) => {
+    addItem(s, '鼠盤', '🐀');
+    addItem(s, '兔血', '🩸');
+    setFlag(s, 'got_mouse_disk');
+    setFlag(s, 'know_apprentice');
+  },
+  choices: [
+    { text: '用鼠盤追蹤Chloe', next: 'ch3b_track' },
+    { text: '直接去鎖羅盆', next: 'ch4_go_village' }
+  ]
+},
+'ch3b_track': {
+  chapter: '第三章B 邪教',
+  icon: '🐀',
+  text: `我將兔血滴入鼠盤。
+
+尋血鼠小波比開始郁動，眼珠變成深紅。
+
+佢向住「東北」方向不斷跑。
+
+「東北⋯⋯即係鎖羅盆！」
+
+我哋即刻出發。
+
+一路上，我用鼠盤追蹤，確認Chloe嘅復活蛋就喺鎖羅盆。
+
+但沅彤提醒我：「東武勳一定喺嗰度。佢會阻止我哋。」
+
+「咁我哋點算？」
+
+「我有八赤刀。」沅彤望住手上嘅斷刀：「雖然斷咗，但仲可以用一次。」
+
+宋文德補充：「仲有我。我嘅眼睛見過另一個世界，可以幫手。」
+
+我望住佢哋兩個，心中充滿感激。
+
+「多謝你哋。」
+
+「唔使謝。一齊去結束呢一切。」
+
+我哋三人一齊出發，前往鎖羅盆。
+
+<span class="system">【獲得線索：Chloe嘅位置】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'tracked_chloe');
+  },
+  choices: [
+    { text: '前往鎖羅盆', next: 'ch4_go_village' }
+  ]
+},
+
+/* --- CHAPTER 4: THE VILLAGE --- */
+'ch4_go_home': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🏠',
+  text: `我返到樂富嘅屋企。
+
+門大開。入面一片狼藉。
+
+父母間房嘅床上，有碎裂嘅蛋殼同血淋淋嘅黏液。
+
+但⋯⋯喺角落，我搵到一隻完好嘅蛋。蛋殼上畫住⋯⋯我媽媽嘅樣。
+
+佢哋嚟唔切將所有蛋帶走。
+
+喺蛋旁邊，我搵到爸爸嘅手錶——錶蓋打開，入面有我哋全家福嘅相。
+
+<span class="whisper">（爸爸⋯⋯你係咪想話俾我知，你仲在生？）</span>
+
+<span class="system">【獲得道具：媽媽嘅復活蛋】</span>
+<span class="system">【獲得道具：爸爸嘅手錶】</span>
+
+<span class="whisper">（爸爸呢？爸爸嘅蛋⋯⋯已經碎咗？）</span>
+
+我跪喺地上，但今次無哭。
+
+憤怒取代咗悲傷。
+
+我要去鎖羅盆。我要結束呢一切。`,
+  onEnter: (s) => {
+    addItem(s, '媽媽嘅復活蛋', '🥚');
+    addItem(s, '爸爸嘅手錶', '⌚');
+    setFlag(s, 'found_mom_egg');
+    setFlag(s, 'dad_egg_broken');
+  },
+  choices: [
+    { text: '前往鎖羅盆', next: 'ch4_go_village' }
+  ]
+},
+'ch4_go_village': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🌲',
+  text: `鎖羅盆——一條被遺忘嘅村落。
+
+天色漸暗，春天嘅黃昏來得好快。天空被染成緋紅色，就好似逢魔之時。
+
+泉叔喺村口停低：「入面就係我嘅極限。佢哋嘅領域，我只能送到呢度。」
+
+「記住，八方鏡只可以用一次。你要搵到儀式嘅核心——水井。將鏡對住核心，就可以逆轉。」
+
+「但如果失敗⋯⋯你就會變成蛋，永遠困喺入面。」
+
+泉叔遞俾我一個細小嘅物件：「呢個係我阿爺留低嘅——幸運兔腳。據講可以保護你喺另一個世界存活。」
+
+「另一個世界？」
+
+「如果你被紅目直視太耐，你會開始看到另一個世界。嗰到只有緋紅色嘅天空、一座島嶼同無盡嘅大海。呢隻兔腳可以幫你喺嗰度生存。」
+
+我接過兔腳，感受到一股微弱嘅脈動。
+
+我深呼吸，行入村莊。
+
+村內靜到只剩低風聲。所有房屋都係廢棄嘅。
+
+我留意到有三條路可以行：
+- 直接去村中央嘅水井
+- 搜索廢棄嘅房屋
+- 行去村後嘅神社
+
+<span class="whisper">（時間唔多，但說唔定廢屋入面有有用嘅嘢⋯⋯）</span>`,
+  onEnter: (s) => {
+    addItem(s, '幸運兔腳', '🐇');
+    setFlag(s, 'has_lucky_foot');
+  },
+  choices: [
+    { text: '直接去水井', next: 'ch4_sneak' },
+    { text: '搜索廢棄房屋', next: 'ch4_search_houses' },
+    { text: '去村後神社', next: 'ch4_shrine' },
+    { text: '繞到村莊後面', next: 'ch4_detour' }
+  ]
+},
+'ch4_search_houses': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🏚️',
+  text: `我推開其中一間廢屋嘅門。入面好亂，似乎有人匆忙離開。
+
+喺地上，我搵到一件黑袍——重生會教徒著嘅那種。
+
+袍嘅內袋入面有一張紙：
+
+<span class="whisper">「儀式進行時，兔人首領會企喺水井前面。佢嘅面具係控制佢嘅關鍵。
+如果除咗面具，佢就會恢復理智。
+但記住，只有八方鏡先可以安全咁除面具。
+——宋」</span>
+
+係宋文德嘅字跡。
+
+喺另一間屋，我搵到一個小木盒。入面有一把生鏽嘅鑰匙，上面刻住「井」字。
+
+仲有一個布包。我打開佢——
+
+入面係一把武士刀。刃身反光面呈現鮮紅，散发住一股詭異嘅氣息。
+
+<span class="highlight">八赤刀。</span>
+
+沅彤行過嚟，望住把刀，眼神複雜：「呢把⋯⋯係我婆婆嘅遺物。」
+
+「你識呢把刀？」
+
+「八赤刀。可以斬妖除魔，令兔人死於業火之下。我婆婆用佢嚟封印紅神目。」
+
+沅彤接過把刀，輕輕撫摸刃身：「但係⋯⋯刀斷咗一半。另一半喺日本熱田神宮。」
+
+「夠用嗎？」
+
+「應該⋯⋯夠用一次。」
+
+就喺我哋準備離開嘅時候，一把聲音從身後傳來：
+
+「你哋搵到嘅嘢，幾有趣。」
+
+我轉身——一個著住灰色長風衣嘅男人企喺門口。佢身材高大，眼神銳利，手上拎住一把雙管霰彈槍。
+
+「東武勳。」沅彤冷冷咁講：「西品製藥嘅走狗。」
+
+「沅彤小姐，好久不見。」東武勳微笑：「你婆婆嘅遺物，應該交返俾西品先生。」
+
+「你發夢。」沅彤拎起八赤刀。
+
+「咁就冇得傾。」東武勳舉起槍。
+
+我即刻撲過去拉住沅彤，躲喺牆後。
+
+「呯！」槍聲響起，牆壁被打穿一個洞。
+
+「快走！」我拉住沅彤從後門逃走。
+
+我哋跑進樹林，聽到東武勳喺後面追。
+
+「佢點解會喺呢度？」我問。
+
+「西品盛派佢嚟確保儀式順利進行。如果八赤刀被搵到，佢就會出手搶返。」沅彤邊跑邊講。
+
+「咁即係我哋而家有两个敵人——重生会同西品製藥？」
+
+「係。而且東武勳好危險。佢唔係普通人類。」
+
+「咩意思？」
+
+「佢都飲過兔血。同泉叔一樣，但佢選擇用呢種力量去做壞事。」
+
+我哋終於甩甩東武勳，但我知道佢會再出現。
+
+<span class="system">【獲得道具：教徒黑袍】</span>
+<span class="system">【獲得道具：井之鑰匙】</span>
+<span class="system">【獲得道具：八赤刀（斷裂）】</span>
+<span class="system">【獲得線索：面具嘅弱點】</span>
+<span class="system">【重要事件：東武勳出現】</span>`,
+  onEnter: (s) => {
+    addItem(s, '教徒黑袍', '🥋');
+    addItem(s, '井之鑰匙', '🗝️');
+    addItem(s, '八赤刀', '⚔️');
+    setFlag(s, 'found_mask_weakness');
+    setFlag(s, 'found_well_key');
+    setFlag(s, 'found_blade');
+    setFlag(s, 'met_dong');
+  },
+  choices: [
+    { text: '去神社', next: 'ch4_shrine', condition: (s) => !s.flags.visited_shrine },
+    { text: '去水井', next: 'ch4_sneak' }
+  ]
+},
+'ch4_shrine': {
+  chapter: '第四章 鎖羅盆',
+  icon: '⛩️',
+  text: `神社好細，得一個鳥居同一個賽錢箱。
+
+賽錢箱上面放住一個小木箱。我打開佢——
+
+入面有一卷古老嘅卷軸。
+
+卷軸上面畫住一隻白兔，旁邊寫住：
+
+<span class="whisper">「因幡之白兔——幫助人類嘅神明。
+但被重生會扭曲咗佢嘅本意，變成咗獻祭嘅象徵。
+要拯救被囚禁嘅靈魂，就要用真心呼喚白兔嘅名。
+——赤井一華」</span>
+
+喺卷軸下面，我搵到一個細小嘅鈴鐺，同泉叔俾我嘅銅鈴好似係一對。
+
+仲有一塊勾玉——形狀似蛋，但材質係溫潤嘅玉石。
+
+<span class="whisper">（呢個⋯⋯就係八赤勾玉？）</span>
+
+突然，一把女聲從身後傳來：
+
+「你搵到佢了。」
+
+我轉身——一個短髮女仔企喺鳥居下面。佢著住深色牛仔褸，眼神冷冽但帶住一絲驚訝。
+
+「你係邊個？」
+
+「沅彤。」佢行前一步，望住我手上嘅勾玉：「嗰塊勾玉，係我婆婆嘅遺物。佢叫赤井一華，即係蘇清瑜。」
+
+「你婆婆⋯⋯就係《異鄉人》嘅作者？」
+
+「係。佢年輕嗰陣帶住三件寶物嚟到鎖羅盆——八方鏡、八赤勾玉、同八赤刀。但係佢唔小心遺失咗勾玉，被一隻兔子吞咗落肚。」
+
+沅彤眼神變得沉重：「嗰隻兔因為吞咗神物，演化成半神嘅存在——就係『紅神目』。」
+
+「紅神目⋯⋯係乜嘢？」
+
+「一個畸形嘅生物。擁有人形嘅結構，但無下肢，只有不斷蠕動嘅觸肢。背部至腰部都係無數密集嘅人形枯手，乾燥且瘦削。凹陷畸形嘅面部只剩低一隻可以發出紅光嘅眸子。」
+
+我打咗個冷顫。
+
+「佢就係兔子人嘅源頭。重生會拜祭嘅『神明』，其實就係佢。」
+
+沅彤望住我：「你要搵八赤刀。只有嗰把刀先可以殺死紅神目。但刀已經被重生會奪走。」
+
+「你點解會喺呢度？」
+
+「我嚟搵八赤刀。呢個係我婆婆嘅遺願。」
+
+<span class="system">【獲得道具：神社鈴鐺】</span>
+<span class="system">【獲得道具：八赤勾玉】</span>
+<span class="system">【獲得線索：紅神目嘅真相】</span>
+<span class="system">【獲得同伴：沅彤】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'visited_shrine');
+    addItem(s, '神社鈴鐺', '🔔');
+    addItem(s, '八赤勾玉', '🔮');
+    setFlag(s, 'know_white_rabbit_truth');
+    setFlag(s, 'know_red_god');
+    setFlag(s, 'met_yuan_tong');
+  },
+  choices: [
+    { text: '搜索廢屋', next: 'ch4_search_houses', condition: (s) => !s.flags.found_mask_weakness },
+    { text: '去水井', next: 'ch4_sneak' }
+  ]
+},
+'ch4_sneak': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🤫',
+  text: `我匿喺草叢，慢慢靠近水井。
+
+近咗先見到，水井旁邊放住好多隻復活蛋——有啲畫住我認識嘅人，有啲畫住陌生人。
+
+喺蛋嘅正中央，我見到⋯⋯
+
+Chloe 嘅蛋。佢笑住嘅樣，畫得好靚。
+
+仲有——一隻兔人企喺水井前面，雙眼鮮紅。
+
+佢係首領。比其他兔人更高大，面具上刻住奇怪嘅符文。
+
+我望住佢嘅紅目，感覺到眼角開始痕癢⋯⋯
+
+我伸手抹一下——係血。
+
+我嘅眼睛開始流血。
+
+<span class="whisper">（紅目嘅侵蝕⋯⋯我已經開始看到另一個世界。）</span>
+
+我嘅視線開始扭曲。隱約間，我睇到水井入面有一道緋紅色嘅光。
+
+<span class="whisper">（八方鏡⋯⋯我要對住邊個用？）</span>
+
+<span class="whisper">（如果我有八赤刀，或者知道面具嘅弱點⋯⋯）</span>`,
+  onEnter: (s) => { setFlag(s, 'eye_bleeding'); },
+  choices: [
+    { text: '對住兔人首領用八方鏡', next: 'ch4_mirror_rabbit' },
+    { text: '對住水井用八方鏡', next: 'ch4_mirror_well' },
+    { text: '對住所有復活蛋用八方鏡', next: 'ch4_mirror_eggs' },
+    { text: '搖響神社鈴鐺，呼喚白兔', next: 'ch4_ring_bell', condition: (s) => s.inventory.some(i => i.name === '神社鈴鐺') }
+  ]
+},
+'ch4_charge': {
+  chapter: '第四章 鎖羅盆',
+  icon: '⚔️',
+  text: `我衝出去，拎起摺疊刀。
+
+「Chloe——！」
+
+所有教徒轉頭望住我。兔人首領行前一步，鮮紅雙目直視我。
+
+「Egg⋯⋯egg⋯⋯egg⋯⋯」
+
+二十幾個教徒同時開始加速吟唱。地面開始震動，水井入面傳出低沉嘅轟鳴。
+
+我拎出八方鏡——但手震到捉唔實。
+
+一個教徒從後撲過嚟，撞歪咗我隻手。
+
+八方鏡跌落地上——
+
+<span class="highlight">碎咗。</span>
+
+<span class="system">【BAD END】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_3'); },
+  choices: []
+},
+'ch4_detour': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🔍',
+  text: `我繞到村莊後面，發現一間廢屋。入面有本日誌——《異鄉人》。
+
+日誌講述一個叫赤井一華（蘇青瑜）嘅日本女子，佢嚟到呢條村搵一件叫「八赤勾玉」嘅古董。
+
+據聞呢件古董曾被最出名嘅陰陽師，用於封印某樣古老而邪惡嘅存在。
+
+日誌寫到一半就斷咗，後半頁被撕走。
+
+但喺最後一页，佢寫住：
+
+<span class="highlight">「井底有門。門後有光。光中有真相。」</span>
+
+喺日誌下面，我搵到一個細小嘅木盒。入面有一條繩同幾個奇怪嘅符紙。
+
+<span class="whisper">（呢啲符紙⋯⋯似乎可以用嚟保護自己。）</span>
+
+<span class="system">【獲得線索：井底嘅秘密】</span>
+<span class="system">【獲得道具：保護符紙】</span>`,
+  onEnter: (s) => {
+    setFlag(s, 'know_well_secret');
+    addItem(s, '異鄉人日誌', '📖');
+    addItem(s, '保護符紙', '📜');
+  },
+  choices: [
+    { text: '偷偷靠近水井', next: 'ch4_sneak' },
+    { text: '直接行去水井，嘗試跳入井中', next: 'ch4_jump_well' },
+    { text: '去神社', next: 'ch4_shrine', condition: (s) => !s.flags.visited_shrine },
+    { text: '搜索廢屋', next: 'ch4_search_houses', condition: (s) => !s.flags.found_mask_weakness }
+  ]
+},
+'ch4_jump_well': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🕳️',
+  text: `我趁教徒們吟唱緊，偷偷行到水井旁邊。
+
+井底一片漆黑。但我記得日誌寫住——「井底有門」。
+
+我深吸一口氣，跳咗落去。
+
+跌落去嘅過程出乎意料地長。最後我著陸喺一個地下空間。
+
+面前有一道石門，門上刻住蛋形嘅符文。
+
+門嘅旁邊有三個凹槽，形狀好似⋯⋯蛋？
+
+<span class="system">【解謎：需要將復活蛋放入凹槽】</span>
+<span class="system">提示：門上刻住「以魂引路，以愛開門」</span>`,
+  puzzle: {
+    type: 'item_puzzle',
+    items_needed: ['Chloe 嘅復活蛋'],
+    hint: '你對門嘅感覺話俾你知，Chloe 嘅蛋先係正確嘅鑰匙。',
+    success: 'ch5_underground',
+    fail: 'ch4_well_fail'
+  },
+  choices: []
+},
+'ch4_well_fail': {
+  chapter: '第四章 鎖羅盆',
+  icon: '🕳️',
+  text: `我將蛋放入凹槽⋯⋯但門毫無反應。
+
+<span class="whisper">（唔啫⋯⋯「以魂引路，以愛開門」⋯⋯邊隻蛋先啱？）</span>
+
+突然，我聽到頭頂傳來腳步聲。教徒發現咗水井有異。
+
+「佢喺入面！快啲！」
+
+我困喺井底，無路可退⋯⋯
+
+<span class="system">【BAD END】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_4'); },
+  choices: []
+},
+'ch4_mirror_rabbit': {
+  chapter: '第五章 真相',
+  icon: '🪞',
+  text: `我舉起八方鏡，對住兔人首領。
+
+鏡面發出刺眼嘅白光。
+
+兔人首領發出刺耳嘅慘叫，身體開始溶解。面具跌落嚟——
+
+入面⋯⋯係一張好熟悉嘅臉。
+
+<span class="highlight">係譚國源。嗰個保安。</span>
+
+「你⋯⋯你唔明⋯⋯」佢用最後嘅氣力講：「儀式⋯⋯已經⋯⋯開始⋯⋯停唔到⋯⋯」
+
+佢化成一團黑煙消散。
+
+但水井開始劇烈震動。赤紅嘅光從井底湧出。
+
+<span class="whisper">（停唔到？即係⋯⋯仲有嘢未解決？）</span>`,
+  onEnter: (s) => { setFlag(s, 'defeated_boss'); },
+  choices: [
+    { text: '跳入水井', next: 'ch5_well_jump' },
+    { text: '帶住 Chloe 嘅蛋離開', next: 'ch5_flee' }
+  ]
+},
+'ch4_mirror_well': {
+  chapter: '第五章 真相',
+  icon: '🪞',
+  text: `我將八方鏡對住水井。
+
+鏡面吸收咗井底湧出嘅赤紅光芒，然後反射出一道更強烈嘅光柱。
+
+地面震動。教徒們嘅吟唱被打斷。
+
+水井入面傳出巨大嘅轟鳴聲，然後——
+
+一切靜咗落。
+
+赤紅嘅光消失。水井入面嘅邪惡力量被封印返。
+
+但復活蛋⋯⋯仲喺度。
+
+兔人首領望住我，鮮紅嘅眼睛慢慢變成普通嘅黑色。佢⋯⋯摘除咗面具。
+
+「多謝你⋯⋯」佢用正常嘅聲音講：「我終於⋯⋯自由咗。」
+
+然後佢化成光點消散。
+
+復活蛋開始發光。一隻接一隻，蛋殼慢慢裂開——
+
+從入面走出嚟嘅，係一個個完好無缺嘅人。
+
+Chloe 望住我，眼淚流落嚟：「你⋯⋯你真係嚟咗。」`,
+  choices: [
+    { text: '繼續', next: 'ending_good' }
+  ]
+},
+'ch4_mirror_eggs': {
+  chapter: '第五章 真相',
+  icon: '🪞',
+  text: `我將八方鏡對住所有復活蛋。
+
+鏡面發出柔和嘅光，包圍住所有蛋。
+
+蛋殼開始發光，然後⋯⋯
+
+一隻接一隻，蛋殼溫柔地裂開。從入面走出嚟嘅人，一個個好似啱啱瞓醒咁。
+
+Chloe 第一個行出嚟。佢望住我，笑咗：
+
+「我就知道你會嚟。」
+
+但⋯⋯兔人首領仲企喺度。佢望住我哋，然後⋯⋯慢慢跪低。
+
+「⋯⋯對唔住。」佢除下面具。係一個好老嘅男人，眼入面滿係淚水。
+
+「我嘅家人⋯⋯都係復活蛋。我⋯⋯只係想救佢哋⋯⋯」
+
+泉叔從村口行入嚟，拍拍佢膊頭：「結束咗。」
+
+<span class="system">【TRUE END：蛋係一個謊言，但愛唔係】</span>`,
+  onEnter: (s) => { showEnding(s, 'true_love'); },
+  choices: []
+},
+'ch4_ring_bell': {
+  chapter: '第五章 真相',
+  icon: '🔔',
+  text: `我從口袋拎出神社鈴鐺，用盡全力搖響佢。
+
+「叮——」
+
+清脆嘅鈴聲劃破寂靜。
+
+所有教徒停止吟唱。兔人首領望住我，鮮紅嘅眼睛⋯⋯慢慢變成普通嘅黑色。
+
+佢除下面具。
+
+係一個好老嘅男人，眼入面滿係淚水。
+
+「你⋯⋯你點知⋯⋯」佢聲音沙啞。
+
+「卷軸⋯⋯赤井一華⋯⋯白兔嘅真相。」我答。
+
+佢跪咗落嚟，喊到似個細路仔：「我嘅家人⋯⋯都係復活蛋。我⋯⋯只係想救佢哋⋯⋯」
+
+水井入面傳出柔和嘅白光。一隻真正嘅白兔從井底跳咗出嚟。
+
+佢望住我哋，然後⋯⋯化成無數光點，包圍住所有復活蛋。
+
+蛋殼一個接一個裂開。
+
+Chloe 行出嚟，捉住我隻手：「你做到咗。」
+
+但就喺呢個時候——
+
+我感覺到眼角有液體溢出。
+
+係血。
+
+我嘅視線開始扭曲。我睇到另一個世界——
+
+緋紅色嘅天空。一座島嶼。無盡嘅大海。
+
+仲有——紅神目正從井底升起。
+
+佢擁有人形嘅結構，但無下肢，只有不斷蠕動嘅觸肢。背部至腰部都係無數密集嘅人形枯手，乾燥且瘦削。凹陷畸形嘅面部只剩低一隻可以發出紅光嘅眸子。
+
+「快走！」沅彤拉住我。
+
+但我已經知道要做乜。
+
+我從口袋拎出幸運兔腳——泉叔阿爺留低嘅傳家之寶。
+
+「你要做乜！？」沅彤望住我。
+
+「吞咗勾玉嘅野兔，泉叔阿爺射斷咗佢隻腳。某程度上呢隻都算係兔子人肉。只要食落肚⋯⋯我就可以變成兔子人，進入另一個世界阻止紅神目。」
+
+「你癲咗！你會死！」
+
+我望住佢，笑咗：「我會返嚟。」
+
+我將幸運兔腳放入口，咀嚼，吞落肚。
+
+身體開始變化。骨骼重生，力量湧現。
+
+我拎起八赤刀——沅彤喺廢屋搵到嘅傳家寶。
+
+「等我。」
+
+我跳入水井，墜入緋紅色嘅虛空。
+
+⋯⋯
+
+持續八、九秒嘅墮落，一片血紅嘅環境終於褪去。
+
+我彷彿跌入到另一個世界嘅天空，從高處落下。
+
+紅神目就喺眼前。巨大而宏偉，擁有無限生命。
+
+但我嘅眼睛張開嘅瞬間彷彿被激活，能夠看透一切萬物嘅本質。
+
+我睇到佢嘅本質——心臟位置入面嘅八赤勾玉。
+
+我正好一刀插落佢鮮紅嘅眸子之中，鞏固住自己身體，停止咗不斷下墜嘅情況。
+
+八赤刀插入佢眼部蓄火約十秒鐘後，我先將刀拔出，任由猛烈嘅業火燃燒佢嘅眼球。
+
+「噑噑——」紅神目發出咗，唔存在於現實世間嘅聲音。
+
+佢身體上各處密集嘅手，伸向咗自己頭部之處。
+
+我跳落到佢肩膀嘅位置，再重複同一步驟，將刀插入再拔出，想借由業火之力將佢消滅。
+
+紅神目動作雖然緩慢，但佢嗰數十雙數之不盡嘅手，就好似不費吹灰之力就將我完全包裏住，令我無處可逃。
+
+終於，佢其中一隻手輕輕捉住咗我。
+
+我試圖用八赤刀突圍，但一啲效用都無。我索性趁佢未完全握實之際，兩手一撐爬出隻枯瘦嘅手，避過被佢捏碎嘅一劫。
+
+逃脫咗啱先隻手，一抬頭又多三隻手向我緩緩咁襲近⋯⋯
+
+我轉身跳去佢背部嘅眾手處，一路爬落去之餘，一路拎八赤刀插入佢身體，務求喺佢身上留低最多嘅業火。
+
+插咗接近七、八刀後，紅神目不堪煩擾，原本不斷向上移動嘅巨大身軀忽然似條魚咁，喺半空游動返到地面嘅嗰座島嶼上，打算將背部壓落地面，順便將我壓死⋯⋯
+
+眼見及此，喺佢將身體壓落去之前，我更早跳到落島嶼上，然後狂奔出佢壓下嘅範圍。
+
+「呯——！」一陣沙塵滾滾。
+
+紅神目發出低沉、哀長嘅叫聲，再次用密集嘅手將我包圍。
+
+我搵盡任何時間同空間，一有機會就喺佢身上留低業火嘅痕跡。
+
+有一次佢更用指頭捉住咗我件外套！想舉我到半空再放低跌死。
+
+我即時金蟬脫殼，除咗件羽絨落返地面，再繼續逃走。
+
+我望向「紅神目」原本想移動嘅位置，係緋紅嘅天空上一處破曉嘅光芒，嗰到就係我由井底跌落到呢個世界嘅連接點，亦即係入口。
+
+忽然間，我感覺到眼角有液體溢出⋯⋯
+
+係血。
+
+難怪我會咁清楚，我睇到咗事物嘅本質。
+
+我將視線放落面向我嘅紅神目身上。
+
+巨大而宏偉嘅佢擁有無限生命，係傳說級嘅半神生物。
+
+但除此之外，我仲睇到佢嘅隱藏嘅真正本質只有一個⋯⋯
+
+就係佢心臟位置入面嘅「八赤勾玉」。
+
+紅神目再次發出非人嘅聲音，使出密集嘅枯手伸向我。
+
+我一路向前疾衝，一路避開佢枯手嘅抓捕，直至到好近佢嗰陣，紅神目正在燃燒嘅眼球突然釋放出鮮艷紅光！
+
+只需要被紅光照住就即刻令到我全身僵硬，潛意識有命令我跪拜嘅強烈暗示⋯⋯
+
+但佢無俾任何機會我，下身嘅觸肢一撥！就快狠準咁打向我。
+
+我就好似受到貨車硬生生嘅撞擊咁，被擊飛數米之遠⋯⋯
+
+「嗄⋯⋯⋯⋯」我癱瘓喺地上，全身就快發唔到力：「咳、咳！」
+
+我就好似卑微嘅蒼蠅咁，佢只需要輕輕一撥，就將我打到半死。
+
+紅神目彷彿對我不屑一顧，發出奇怪嘅聲音後再次游浮移動向人間嘅通道。
+
+好明顯咁，我全身嘅骨骼都幾乎被剛才嗰下拍斷。
+
+只可以眼白白睇住佢進入人間？
+
+就算殺唔到⋯⋯
+
+都要、
+
+都要拖延到入口關閉。
+
+日出，
+
+只要現實世界嘅日出一來臨，兩個世界嘅通道就會斷裂。
+
+我拎出泉叔之前交俾我嘅傳家之寶，幸運兔腳。
+
+我眼睛睇到咗，吞咗勾玉嘅野兔喺未被獵戶一家食用之前，泉叔阿爺周白就已經射斷咗佢隻腳，所以某程度上呢隻都算係兔子人肉。
+
+只要放入口⋯⋯
+
+放入口⋯⋯
+
+就可以。
+
+「⋯⋯⋯⋯」我將幸運兔腳嘴嚼、吞入肚內。
+
+我慢慢感受緊身體嘅轉變。
+
+之前已經飲過兔血，如今再食兔肉，就可以變化成兔子人，如無意外。
+
+只有咁做，我嘅骨骼先會重生，
+
+咁就可以，阻止紅神目吧。
+
+觸肢嘅擺動，拂出一絲弱風到我身上，我感受到自己骨肉正重生當中，從未擁有過嘅力量喺身體湧現。
+
+就喺我握得實拳頭嗰陣，我再次企返起身，利用兔子人驚人嘅彈跳力捉住紅神目嘅觸肢！
+
+我一手拎住八赤刀猛插，一手捉實佢嘅觸肢防止跌落。
+
+頭部經已伸入通道嘅紅神目，再次俾我煩擾，我用盡一切力量將佢制止。並且利用自己濺出嘅血，製造出湧火大範圍咁燃燒紅神目背部。
+
+最終，我成為咗佢唔可以坐視不理嘅目標。
+
+我利用兔子人嘅靈活，避開佢密集嘅攻擊，打算一直拖延落去。
+
+隨時間流逝，我開始見到天上破曉之處嘅入口開始縮細，意味住呢個方法有效。
+
+喺座孤島上，紅神目開始認真同我對峙。
+
+佢枯手嘅動作明顯比剛才更快速！
+
+老實講，我已經唔知時間過咗幾耐，但係我喺紅神目身上留低嘅業火，已經佔佢本體四成。
+
+眼見離開無望，入口差唔多已經封閉，於是我孤注一擲。
+
+將八赤刀擲向紅神目嘅心臟位置！
+
+「嗖！」刃身陷入佢身軀。
+
+我咁做，係想八赤刀事先喺佢體內積蓄住更多嘅血液，等我成功跳到佢胸口位置嗰陣一下拔出，就可以湧出無量嘅業火。
+
+感覺上逐漸暴走嘅紅神目，進行緊無差別嘅攻擊，就好似一隻纏繞住你嘅蒼蠅，令到你好生氣咁。
+
+我有兩次差啲俾佢捉住，但都險險避開。
+
+最終，我成功跳到佢胸口，拔出八赤刀——
+
+無量嘅業火湧出，吞噬紅神目嘅全身。
+
+「嗄嗄——」佢發出最後嘅哀鳴。
+
+緋紅色嘅天空開始褪色。島嶼碎裂。大海蒸發。
+
+紅神目嘅身體化成光點，消散喺虛空之中。
+
+八赤勾玉從佢心臟跌落，我伸手接住。
+
+⋯⋯
+
+但係⋯⋯
+
+我望住天上嘅入口。
+
+已經完全關閉咗。
+
+我返唔到去。
+
+我企喺島嶼上，望住無盡嘅大海。
+
+呢個世界，只有緋紅色嘅天空、一座島嶼同無盡嘅大海。
+
+我救咗所有人。
+
+但我⋯⋯永遠留喺呢度。
+
+⋯⋯
+
+現實世界。
+
+沅彤望住水井，眼淚流落嚟。
+
+佢哋等咗好耐好耐。
+
+但主角無返嚟。
+
+Chloe 行到水井旁邊，望住深不見底嘅井底。
+
+「佢⋯⋯佢話會返嚟⋯⋯」
+
+泉叔沉默咁拍拍Chloe膊頭。
+
+沅彤拎住八赤勾玉——主角喺最後一刻，將佢從井底拋咗上嚟。
+
+勾玉上面仲有主角嘅血跡。
+
+「佢⋯⋯將佢留咗俾我哋。」沅彤聲音震顫。
+
+十年後。
+
+沅彤去咗日本名古屋，開咗一間古董鋪。
+
+佢一直帶住八赤勾玉。
+
+有一日，佢喺熱田神宮還返八赤刀嘅斷裂部分。
+
+然後佢去咗一間舊式CD鋪。
+
+試聽區到，有個女仔著住深色牛仔褸，背靠住播機聽歌。
+
+係 Radiohead 嘅《Creep》。
+
+呢種老歌，令佢諗返起以前同主角行動嗰陣。
+
+When you were here before
+Couldn't look you in the eyes
+
+沅彤除低耳機，望到一個人企喺門口。
+
+係主角。
+
+佢無死。
+
+佢喺另一個世界活咗十年，最終搵到方法返嚟。
+
+「仲以為你死咗。」
+
+佢十年後，第一句同我講嘅就係依句。
+
+「我打敗咗佢。」
+
+「證明？」
+
+我將佢嘅家傳寶物，八赤勾玉俾返佢。
+
+沅彤見到勾玉後，都唔敢相信我真係拎咗出嚟。
+
+「你特登嚟日本搵我？」我哋行出碟鋪。
+
+「你話呢？我遲咗十年先返嚟。」我講出一句，一早想同沅彤講嘅嘢：「我仲差你一句對唔住。」
+
+「你都知啊？做牛做馬囉。」沅彤一手搭住我肩膀，說：「嚟我鋪頭幫手。」
+
+「日本做嘢？非法勞工喎，同埋我好歹都係半個救世主，你唔好出最低工資俾我啊⋯⋯⋯⋯」
+
+「唔做牛啊？咁做馬囉。」突然間，沅彤行慢幾步，然後一嘢騎落我背脊到！
+
+「嗚哇！」我忍唔住叫咗聲，隻腳完全唔平衡。
+
+「跑返去古董鋪！」
+
+「啊呀呀⋯⋯⋯⋯」
+
+「喂⋯⋯⋯⋯」沅彤開始識驚：「你唔好扮嘢，我無咁重。」
+
+我不知不覺咁，帶埋佢跌落雪地上。
+
+跌落之後，大家即刻互相拎身邊嘅薄雪擲向對方，一邊跑一邊擲。
+
+最後嘅我哋，結局並無如同故事般沉重。
+
+痛苦嘅十餘年，終於喺一場雪戰獲得快樂。
+
+我唔知以後嘅路，會係點。
+
+但我相信，
+
+跟住佢、
+
+跟住眼前呢個鐘意扔雪、
+
+鐘意串我，但又再關心我、
+
+鐘意笑，但又成日扮到唔愛笑嘅女仔，
+
+就可以搵出答案吧？
+
+<span class="system">【BEST END：白兔嘅救贖】</span>`,
+
+我望住手上嘅八赤勾玉，然後交俾佢。
+
+「你婆婆嘅遺物。」
+
+佢接過勾玉，喊咗出嚟。
+
+Chloe 行過嚟，揽住我。
+
+泉叔行過嚟，拍拍我膊頭：「做咗。你做到咗。」
+
+天空嘅赤紅慢慢褪去，恢復正常嘅藍色。
+
+春天⋯⋯終於過去咗。
+
+<span class="system">【BEST END：白兔嘅救贖】</span>`,
+  onEnter: (s) => { showEnding(s, 'best_end'); },
+  choices: []
+},
+
+/* --- CHAPTER 5: FINAL CHOICES --- */
+'ch5_underground': {
+  chapter: '第五章 真相',
+  icon: '⛩️',
+  text: `Chloe 嘅蛋放入凹槽，發出溫暖嘅光。石門緩緩打開。
+
+門後係一個巨大嘅地下神殿。中央有一座石像——
+
+係一隻巨大嘅白兔。
+
+兔嘅雙眼鑲嵌住兩顆紅色寶石。
+
+石像前面放住一個祭壇，祭壇上面寫住：
+
+<span class="highlight">「獻上最後嘅蛋，或獻上自己。」</span>
+
+<span class="system">【最終抉擇】</span>`,
+  choices: [
+    { text: '獻上 Chloe 嘅蛋', next: 'ch5_sacrifice_egg' },
+    { text: '獻上自己', next: 'ch5_sacrifice_self' },
+    { text: '用八方鏡照石像', next: 'ch5_mirror_statue', condition: (s) => s.inventory.some(i => i.name === '八方鏡') },
+    { text: '乜都唔獻，破壞石像', next: 'ch5_destroy' }
+  ]
+},
+'ch5_sacrifice_egg': {
+  chapter: '第五章 真相',
+  text: `我將 Chloe 嘅蛋放喺祭壇上。
+
+蛋殼慢慢裂開，但⋯⋯Chloe 無走出嚟。
+
+佢嘅靈魂化作一道光，被石像吸收。
+
+白兔嘅雙眼亮咗一下，然後⋯⋯熄滅。
+
+<span class="whisper">（Chloe⋯⋯）</span>
+
+我跪喺祭壇前。手中只剩下空殼。
+
+<span class="system">【NORMAL END：空殼】</span>`,
+  onEnter: (s) => { showEnding(s, 'normal_1'); },
+  choices: []
+},
+'ch5_sacrifice_self': {
+  chapter: '第五章 真相',
+  text: `我行上前，將雙手放喺祭壇上。
+
+「我願意。」
+
+一道赤紅嘅光包圍住我。我感受到身體開始捲縮⋯⋯
+
+但同時，所有復活蛋都開始發光。
+
+Chloe、外母、媽媽⋯⋯一個個從蛋中走出嚟。
+
+「阿政！！」Chloe 嘅聲音好遠，又好似好近。
+
+我嘅意識慢慢模糊。最後嘅畫面，係 Chloe 喊住嘅臉。
+
+我變成咗一隻蛋。
+
+但⋯⋯我笑住。
+
+因為佢哋⋯⋯安全咗。
+
+<span class="system">【BITTERSWEET END：蛋中人】</span>`,
+  onEnter: (s) => { showEnding(s, 'bittersweet'); },
+  choices: []
+},
+'ch5_mirror_statue': {
+  chapter: '第五章 真相',
+  icon: '🪞',
+  text: `我舉起八方鏡，對住白兔石像。
+
+鏡面反射出一道前所未有嘅強光。
+
+石像開始龜裂。從裂縫入面，湧出無數嘅光點——
+
+全部係被吞噬嘅靈魂。
+
+白兔石像轟然倒塌。從碎石入面，走出嚟一個細細嘅身影——
+
+一隻真正嘅白兔。
+
+佢望住我，紅寶石般嘅眼睛入面，冇邪惡，只有⋯⋯疲倦。
+
+「好耐⋯⋯好耐冇人試過用呢塊鏡。」白兔竟然開口講嘢。
+
+「我唔係邪惡嘅存在。我只係⋯⋯被困喺呢度嘅守門人。」
+
+「重生會扭曲咗我嘅職責，將救贖變成咗獻祭。」
+
+白兔化成一團柔光，消散喺空氣中。
+
+所有復活蛋同時裂開。
+
+但就喺呢個時候——
+
+我感覺到眼角有液體溢出。
+
+係血。
+
+我嘅眼睛開始流血。
+
+紅神目嘅紅目直視太耐，我嘅靈魂已經被侵蝕。
+
+我嘅視線開始模糊，周圍嘅世界開始扭曲——
+
+我睇到另一個世界。
+
+緋紅色嘅天空。一座島嶼。無盡嘅大海。
+
+仲有——一個巨大嘅畸形生物，正從井底升起。
+
+紅神目。
+
+佢擁有人形嘅結構，但無下肢，只有不斷蠕動嘅觸肢。背部至腰部都係無數密集嘅人形枯手，乾燥且瘦削。凹陷畸形嘅面部只剩低一隻可以發出紅光嘅眸子。
+
+「快走！」沅彤拉住我：「通道已經打開，佢要嚟到人間！」
+
+<span class="system">【TRUE END：白兔嘅真相】</span>`,
+  onEnter: (s) => { showEnding(s, 'true_end'); },
+  choices: []
+},
+'ch5_destroy': {
+  chapter: '第五章 真相',
+  icon: '💥',
+  text: `我拎起摺疊刀，用盡全力刺向石像。
+
+一刀、兩刀、三刀——
+
+石像紋風不動。
+
+但我嘅憤怒令到我停唔到。
+
+突然，石像嘅雙眼射出赤紅嘅光——
+
+我成個人被擊飛，撞喺牆上。
+
+「愚蠢⋯⋯」一把聲音從石像傳出。
+
+「你以為暴力可以解決一切？」
+
+地面開始塌陷。我同所有復活蛋一齊跌落更深嘅深淵⋯⋯
+
+<span class="system">【BAD END：深淵】</span>`,
+  onEnter: (s) => { showEnding(s, 'bad_5'); },
+  choices: []
+},
+'ch5_well_jump': {
+  chapter: '第五章 真相',
+  icon: '🕳️',
+  text: `我跳入水井。
+
+井底有一道石門。我將 Chloe 嘅蛋放喺門前——
+
+門自動打開咗。
+
+入面係一個地下神殿，中央有一座白兔石像。
+
+我舉起八方鏡——
+
+<span class="system">【最終抉擇】</span>`,
+  choices: [
+    { text: '用八方鏡照石像', next: 'ch5_mirror_statue' },
+    { text: '破壞石像', next: 'ch5_destroy' }
+  ]
+},
+'ch5_flee': {
+  chapter: '第五章 真相',
+  icon: '🏃',
+  text: `我帶住 Chloe 嘅蛋，轉身跑。
+
+背後嘅村莊開始崩塌。赤紅嘅光從地面裂縫湧出。
+
+我跑，拼命咁跑。
+
+衝出村口嗰陣，泉叔拉住我：「快啲上車！」
+
+車駛出山林。我回頭望——
+
+鎖羅盆已經被一團赤紅嘅霧氣吞噬。
+
+我低頭望住手中嘅蛋。Chloe 嘅樣依然畫得好靚。
+
+但⋯⋯其他蛋⋯⋯仲喺入面。
+
+我救到 Chloe，但救唔到其他⋯⋯
+
+包括我父母。
+
+<span class="system">【NORMAL END：殘缺嘅救贖】</span>`,
+  onEnter: (s) => { showEnding(s, 'normal_2'); },
+  choices: []
+},
+
+/* --- ENDINGS --- */
+'ending_good': {
+  chapter: '結局',
+  icon: '🌅',
+  text: `所有復活蛋嘅人都返咗嚟。
+
+Chloe 捉住我隻手，喊咗出嚟。
+
+外母雖然好虛弱，但平安無事。
+
+泉叔行過嚟，難得咁笑咗：「做咗。你做到咗。」
+
+天空嘅赤紅慢慢褪去，恢復正常嘅藍色。
+
+春天⋯⋯終於過去咗。
+
+但我知道——
+
+兔子人嘅傳說，唔會就咁結束。
+
+<span class="system">【GOOD END：春天嘅盡頭】</span>`,
+  onEnter: (s) => { showEnding(s, 'good_end'); },
+  choices: []
+},
+'ending_true': {
+  chapter: '結局',
+  icon: '✨',
+  text: `所有人都返咗嚟。包括兔人首領入面嘅家人。
+
+泉叔同兔人首領——譚國源——默默行到一旁。
+
+「你嘅家人⋯⋯我都幫你救返。」泉叔說。
+
+譚國源跪咗落嚟，喊到似個細路仔。
+
+Chloe 行過嚟，揽住我。
+
+「Egg is a lie.」佢細聲講：「但愛唔係。」
+
+我望住天空。晚霞將成個天空染成金色。
+
+呢一次，唔係絕望嘅紅，而係溫暖嘅金。
+
+<span class="system">【TRUE END：蛋係一個謊言，但愛唔係】</span>`,
+  onEnter: (s) => { showEnding(s, 'true_love'); },
+  choices: []
+},
+
+}; /* end story */
+
+/* === ENDING DATA === */
+const endings = {
+  bad_1: {
+    icon: '🐰', title: '兔口餘生', type: 'BAD END',
+    color: '#c4362a',
+    text: '你被兔子人嘅紅目直視，成為咗佢嘅目標。你嘅故事，喺呢度終結⋯⋯又或者，剛剛開始。'
+  },
+  bad_2: {
+    icon: '🪓', title: '不自量力', type: 'BAD END',
+    color: '#c4362a',
+    text: '你試圖用一把菜刀對抗兔子人。勇氣可嘉，但代價沉重。你嘅靈魂，成為咗佢嘅晚餐。'
+  },
+  bad_3: {
+    icon: '💔', title: '鏡碎魂消', type: 'BAD END',
+    color: '#c4362a',
+    text: '八方鏡碎咗。唯一可以逆轉儀式嘅工具化為碎片。你同所有復活蛋嘅命運，就此定格。'
+  },
+  bad_4: {
+    icon: '🕳️', title: '井底之蛙', type: 'BAD END',
+    color: '#c4362a',
+    text: '你困喺井底，無路可退。教徒們嘅吟唱聲越來越近。你嘅意識，慢慢化為蛋中嘅一滴紅。'
+  },
+  bad_5: {
+    icon: '⚫', title: '深淵凝視', type: 'BAD END',
+    color: '#c4362a',
+    text: '當你凝視深淵時，深淵也凝視著你。你選擇咗暴力，暴力以十倍奉還。'
+  },
+  normal_1: {
+    icon: '🥚', title: '空殼', type: 'NORMAL END',
+    color: '#d4a853',
+    text: '你失去咗 Chloe，但保住咗自己嘅命。手中只剩低空殼，就好似你哋之間嘅關係咁——曾經存在過，但宜家只係一個殼。'
+  },
+  normal_2: {
+    icon: '🌄', title: '殘缺嘅救贖', type: 'NORMAL END',
+    color: '#d4a853',
+    text: '你救到 Chloe，但其他人⋯⋯包括你父母，永遠困喺蛋入面。呢個世界就係咁，你永遠救唔到所有人。'
+  },
+  bittersweet: {
+    icon: '🥚', title: '蛋中人', type: 'BITTERSWEET END',
+    color: '#f5b0c8',
+    text: '你用自己去交換其他人嘅自由。你變成咗一隻蛋，但你笑住——因為佢哋安全咗。Chloe 會記住你。'
+  },
+  good_end: {
+    icon: '🌅', title: '春天嘅盡頭', type: 'GOOD END',
+    color: '#7ec87e',
+    text: '你救返 Chloe 同佢屋企人。春天終於過去，但你嘅傷痕永遠唔會完全消失。至少⋯⋯你哋仲可以一齊行落去。'
+  },
+  true_end: {
+    icon: '🐇', title: '白兔嘅真相', type: 'TRUE END',
+    color: '#7ec87e',
+    text: '你發現咗兔子人同白兔石像嘅真相。一切嘅邪惡，不過係被扭曲嘅善意。你用最溫柔嘅方式，結束咗呢場惡夢。'
+  },
+  true_love: {
+    icon: '✨', title: '蛋係一個謊言，但愛唔係', type: 'TRUE END',
+    color: '#7ec87e',
+    text: '所有人都平安返嚟。Chloe 嘅預言成真——Egg is a lie，但愛可以打破一切詛咒。你哋嘅故事，終於有咗一個完美嘅結局。'
+  },
+  best_end: {
+    icon: '⚔️', title: '白兔嘅救贖', type: 'BEST END',
+    color: '#f5b0c8',
+    text: '你吞下幸運兔腳，變成兔子人，跳入另一個世界。喺緋紅色嘅天空下，你用八赤刀對戰紅神目——一個擁有無數枯手同觸肢嘅畸形巨獸。你利用兔子人嘅彈跳力，一路避開佢嘅枯手，一路喺佢身上留低業火嘅痕跡。最終你將刀插入佢心臟，業火吞噬咗佢嘅全身。但代價係，你被困喺另一個世界十年。十年後，你終於搵到方法返嚟現實世界，喺名古屋嘅CD鋪重逢沅彤，將八赤勾玉交還俾佢。呢個係最完美嘅結局。'
+  }
+};
+
+/* === ITEM DESCRIPTIONS === */
+const itemDescriptions = {
+  '外父嘅復活蛋': '蛋殼上畫住 Chloe 爸爸嘅樣。微微溫熱，好似有嘢喺入面脈緊。',
+  'Chloe 嘅復活蛋': '蛋殼上畫住 Chloe 笑住嘅樣。蛋殼微微脈動，好似有心跳咁。',
+  '外母嘅復活蛋': '蛋殼出現咗裂痕。泉叔話時間唔多。',
+  '媽媽嘅復活蛋': '喺你屋企角落搵到。蛋殼上畫住你媽媽嘅樣。',
+  'Chloe 嘅手機': '有密碼鎖。密碼似乎同重生會嘅日期有關。',
+  '重生會嘅信': '信封上印住蛋狀橢圓形，入面有個十字架嘅 Logo。',
+  'Chloe 嘅備忘': '「如果我有事，唔好嚟搵我。Egg is a lie.」',
+  '摺疊刀': '泉叔俾你嘅刀。刀柄刻住奇怪嘅符文。',
+  '泉叔嘅外套': '內襯有銀線縫製嘅保護圖案。據講可以抵禦兔人嘅攻擊。',
+  '驅兔銅鈴': '搖響可以短暫擊退兔人。但效果只維持幾秒。',
+  '八方鏡': '宋文德俾你嘅古鏡。可以反射靈魂嘅力量。只可以用一次。',
+  '鐵盒筆記': '外父嘅自白。佢一早知道自己會變蛋。',
+  '重生會徽章': '寫住「重生會——翠林分部」。',
+  '外父嘅鞋': '鞋入面塞住一張紙條：「如果出事，去床底。——源」',
+  '重生會頸鏈': '十字架形狀，同重生會封信上面嘅 Logo 一模一樣。',
+  '神秘 USB': '喺細佬嘅蛋汁入面搵到。細佬事先收埋嘅。',
+  '急救箱': '雪櫃頂搵到。入面有繃帶、消毒酒精。',
+  '鎖羅盆地圖': '地圖上面畫住鎖羅盆嘅位置，仲有幾個標記住嘅紅點。',
+  '生果刀': '廚櫃抽屜入面搵到。雖然唔係乜嘢厲害武器，但總好過赤手空拳。',
+  '泉叔嘅筆記': '記錄咗各種對付兔人嘅方法。',
+  '舊相片': '相中有一個日本女人站喺鎖羅盆嘅水井前。',
+  '靈魂勾玉': '據講可以保護靈魂。泉叔從地下室搵到。',
+  '保安嘅相片': '譚國源嘅樣貌。佢係重生會嘅成員。',
+  '癌症報告': '外父嘅癌症診斷報告。日期係三個月前。',
+  'Chloe 嘅日記': '最後一頁寫住：「Egg is a lie.」',
+  '教徒黑袍': '重生會教徒著嘅那種。內袋有宋文德嘅紙條。',
+  '井之鑰匙': '上面刻住「井」字。似乎可以打開水井嘅某道門。',
+  '古老卷軸': '畫住一隻白兔，旁邊寫住白兔嘅真相。',
+  '七步求導卡': '重生會嘅入會儀式卡。列明七個步驟：背歌、射靶、採花、跪拜、吞蛋、直視紅光、奉獻。',
+  '紅神目詠歌': '重生會嘅聖歌。歌詞提到「四十四名門徒」、「永生」、「獻上靈魂」。',
+  '八赤刀': '刃身反光面呈現鮮紅嘅武士刀。可以斬妖除魔，令兔人死於業火之下。',
+  '神社鈴鐺': '同泉叔嘅銅鈴好似係一對。可以呼喚白兔嘅力量。',
+  '音樂盒紙條': 'Chloe 留低嘅紙條。指引你去廁所、細佬張床、同佢張電腦櫈。',
+  '爸爸嘅手錶': '錶蓋打開，入面有你全家福嘅相。',
+  '驅魔鹽米': '宋文德俾你嘅鹽同米。撒喺地上可以延緩兔人幾秒。',
+  '保護符紙': '喺廢屋搵到。似乎可以用嚟保護自己。',
+  '錄音筆': 'Chloe 嘅錄音。佢警告你重生會嘅陰謀。',
+  '後備鎖匙': 'Chloe 收埋嘅後備鎖匙。',
+  '重生會文件': '重生會嘅內部通訊記錄。提到宋文德嘅名字。',
+  '幸運兔腳': '泉叔阿爺留低嘅傳家之寶。據講可以保護你喺另一個世界存活。',
+  '八赤勾玉': '赤井一華嘅遺物。被兔子吞咗落肚，演化成紅神目。',
+  '八赤刀': '刃身反光面呈現鮮紅嘅武士刀。可以斬妖除魔，令兔人死於業火之下。'
+};
+
+/* === GAME ENGINE === */
+function addItem(s, name, icon) {
+  if (!s.inventory.find(i => i.name === name)) {
+    s.inventory.push({ name, icon });
+    updateInventoryUI();
+  }
+}
+function setFlag(s, flag) { s.flags[flag] = true; }
+function hasItem(s, name) { return s.inventory.some(i => i.name === name); }
+
+function updateInventoryUI() {
+  document.getElementById('inv-num').textContent = state.inventory.length;
+  const list = document.getElementById('inv-list');
+  list.innerHTML = '';
+  state.inventory.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'inv-item';
+    div.setAttribute('data-desc', itemDescriptions[item.name] || '未知道具');
+    div.innerHTML = `<span class="item-icon">${item.icon}</span>${item.name}`;
+    list.appendChild(div);
+  });
+}
+
+function toggleInventory() {
+  document.getElementById('inventory-panel').classList.toggle('open');
+  document.getElementById('inv-overlay').classList.toggle('show');
+}
+
+function startGame() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  goToNode('prologue_1');
+}
+
+function goToNode(nodeId) {
+  const node = story[nodeId];
+  if (!node) { console.error('Node not found:', nodeId); return; }
+
+  state.currentNode = nodeId;
+  state.history.push(nodeId);
+
+  // Update chapter
+  if (node.chapter) {
+    state.chapter = node.chapter;
+    document.getElementById('chapter-label').textContent = node.chapter;
+  }
+
+  // Scene image
+  document.getElementById('scene-img').textContent = node.icon || '🥚';
+
+  // Run onEnter
+  if (node.onEnter) node.onEnter(state);
+
+  // Story text with typewriter effect
+  const textEl = document.getElementById('story-text');
+  textEl.innerHTML = '';
+  typewriterEffect(textEl, node.text, () => {
+    showChoices(node);
+  });
+
+  // Handle puzzle
+  if (node.puzzle) {
+    state.puzzleActive = true;
+    state.currentPuzzle = node.puzzle;
+    document.getElementById('puzzle-area').style.display = 'block';
+    document.getElementById('puzzle-input').value = '';
+    document.getElementById('puzzle-hint').textContent = '';
+    document.getElementById('puzzle-input').focus();
+  } else {
+    state.puzzleActive = false;
+    document.getElementById('puzzle-area').style.display = 'none';
+  }
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function typewriterEffect(el, html, callback) {
+  state.typing = true;
+  document.getElementById('skip-hint').style.display = 'block';
+  // Parse HTML and reveal character by character
+  el.innerHTML = html;
+  const fullHTML = el.innerHTML;
+  el.innerHTML = '';
+
+  let i = 0;
+  let inTag = false;
+  let buffer = '';
+  const speed = 18;
+
+  function tick() {
+    if (i >= fullHTML.length) {
+      state.typing = false;
+      document.getElementById('skip-hint').style.display = 'none';
+      if (callback) callback();
+      return;
+    }
+    const char = fullHTML[i];
+    if (char === '<') inTag = true;
+    if (inTag) {
+      buffer += char;
+      if (char === '>') {
+        inTag = false;
+        el.innerHTML += buffer;
+        buffer = '';
+      }
+      i++;
+      tick();
+      return;
+    }
+    el.innerHTML += char;
+    i++;
+    setTimeout(tick, speed);
+  }
+
+  // Allow click to skip
+  el.onclick = () => {
+    if (state.typing) {
+      state.typing = false;
+      el.innerHTML = fullHTML;
+      el.onclick = null;
+      document.getElementById('skip-hint').style.display = 'none';
+      if (callback) callback();
+    }
+  };
+
+  tick();
+}
+
+function showChoices(node) {
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+
+  const validChoices = node.choices.filter(c => {
+    if (c.condition) return c.condition(state);
+    return true;
+  });
+
+  validChoices.forEach((choice, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    if (choice.puzzle) btn.classList.add('puzzle-choice');
+    btn.textContent = choice.text;
+    btn.style.animationDelay = (idx * 0.1) + 's';
+    btn.classList.add('fade-in');
+    btn.onclick = () => {
+      if (choice.addItem) addItem(state, choice.addItem, choice.itemIcon || '📦');
+      if (choice.setFlag) setFlag(state, choice.setFlag);
+      goToNode(choice.next);
+    };
+    choicesEl.appendChild(btn);
+  });
+}
+
+function submitPuzzle() {
+  if (!state.puzzleActive || !state.currentPuzzle) return;
+
+  const input = document.getElementById('puzzle-input').value.trim();
+  const puzzle = state.currentPuzzle;
+
+  if (puzzle.type === 'item_puzzle') {
+    const hasRequired = puzzle.items_needed.every(name => hasItem(state, name));
+    if (hasRequired) {
+      state.puzzleActive = false;
+      document.getElementById('puzzle-area').style.display = 'none';
+      goToNode(puzzle.success);
+    } else {
+      goToNode(puzzle.fail);
+    }
+    return;
+  }
+
+  if (input === puzzle.answer) {
+    state.puzzleActive = false;
+    document.getElementById('puzzle-area').style.display = 'none';
+    goToNode(puzzle.success);
+  } else {
+    document.getElementById('puzzle-hint').textContent = puzzle.hint || '答案唔啫，再試下。';
+    document.getElementById('puzzle-input').value = '';
+    document.getElementById('puzzle-input').classList.add('shake');
+    setTimeout(() => {
+      document.getElementById('puzzle-input').classList.remove('shake');
+    }, 300);
+  }
+}
+
+// Enter key for puzzle
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && state.puzzleActive) submitPuzzle();
+});
+
+function showEnding(s, endingId) {
+  const ending = endings[endingId];
+  if (!ending) return;
+
+  setTimeout(() => {
+    document.getElementById('game-screen').style.display = 'none';
+    const endScreen = document.getElementById('ending-screen');
+    endScreen.style.display = 'block';
+    document.getElementById('ending-icon').textContent = ending.icon;
+    document.getElementById('ending-title').textContent = ending.title;
+    document.getElementById('ending-title').style.color = ending.color;
+    document.getElementById('ending-type').textContent = ending.type;
+    document.getElementById('ending-type').style.color = ending.color;
+    document.getElementById('ending-text').textContent = ending.text;
+  }, 2000);
+}
+</script>
+</body>
+</html>
